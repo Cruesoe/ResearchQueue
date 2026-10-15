@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <ResearchQueue_Standard>Standard</ResearchQueue_Standard>
+  <ResearchQueue_Gravtech>Gravtech</ResearchQueue_Gravtech>
+  <ResearchQueue_AnomalyCategory>Anomaly: {0}</ResearchQueue_AnomalyCategory>
+  <ResearchQueue_Completed>Completed</ResearchQueue_Completed>
+  <ResearchQueue_Requires>Requires: {0}</ResearchQueue_Requires>
+  <ResearchQueue_TechprintsRequired>Required techprints have not been applied.</ResearchQueue_TechprintsRequired>
+  <ResearchQueue_DiscoveryRequired>This project has not been discovered.</ResearchQueue_DiscoveryRequired>
+  <ResearchQueue_StudyRequired>Anomaly study must be unlocked.</ResearchQueue_StudyRequired>
+  <ResearchQueue_OtherRequirements>Research requirements are not currently met. Check the project's research facilities, analysis, inspection, and progression requirements.</ResearchQueue_OtherRequirements>
+  <ResearchQueue_ExplicitSnooze>Snoozed by the player.</ResearchQueue_ExplicitSnooze>
+  <ResearchQueue_SnoozedDependency>Excluded by a snoozed prerequisite. Restore that prerequisite to make this project eligible again.</ResearchQueue_SnoozedDependency>
+  <ResearchQueue_Foundation>Foundation</ResearchQueue_Foundation>
+  <ResearchQueue_Emergence>Emergence</ResearchQueue_Emergence>
+  <ResearchQueue_Current>Current research</ResearchQueue_Current>
+  <ResearchQueue_Idle>No available research can start in this system.</ResearchQueue_Idle>
+  <ResearchQueue_Queue>Queue</ResearchQueue_Queue>
+  <ResearchQueue_Snoozed>Snoozed</ResearchQueue_Snoozed>
+  <ResearchQueue_Date>Approximate date</ResearchQueue_Date>
+  <ResearchQueue_Days>Days remaining</ResearchQueue_Days>
+  <ResearchQueue_NoSnoozed>No snoozed projects match the filter.</ResearchQueue_NoSnoozed>
+  <ResearchQueue_NoQueued>No queued projects match the filter. Newly available research will be added automatically.</ResearchQueue_NoQueued>
+  <ResearchQueue_Restore>Restore</ResearchQueue_Restore>
+  <ResearchQueue_Snooze>Snooze</ResearchQueue_Snooze>
+  <ResearchQueue_Next>Research next</ResearchQueue_Next>
+  <ResearchQueue_Blocked>Blocked</ResearchQueue_Blocked>
+  <ResearchQueue_New>New</ResearchQueue_New>
+  <ResearchQueue_Unknown>Unknown</ResearchQueue_Unknown>
+  <ResearchQueue_DaysEstimate>~{0} days</ResearchQueue_DaysEstimate>
+  <ResearchQueue_Cost>Research points: {0}</ResearchQueue_Cost>
+  <ResearchQueue_UnlockEstimate>Estimated completion: {0}</ResearchQueue_UnlockEstimate>
+  <ResearchQueue_ConfirmSnooze>Snooze {0}? The following dependent projects will also be removed from their queues:</ResearchQueue_ConfirmSnooze>
+</LanguageData>
