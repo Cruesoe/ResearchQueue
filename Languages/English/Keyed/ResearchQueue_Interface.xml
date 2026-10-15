@@ -8,6 +8,12 @@
   <ResearchQueue_TechprintsRequired>Required techprints have not been applied.</ResearchQueue_TechprintsRequired>
   <ResearchQueue_DiscoveryRequired>This project has not been discovered.</ResearchQueue_DiscoveryRequired>
   <ResearchQueue_StudyRequired>Anomaly study must be unlocked.</ResearchQueue_StudyRequired>
+  <ResearchQueue_EraRequired>Advance to {0} to start this research.</ResearchQueue_EraRequired>
+  <ResearchQueue_EmergenceDisabled>Emergence research is disabled in Node Research settings.</ResearchQueue_EmergenceDisabled>
+  <ResearchQueue_FoundationsRequired>Complete this era's foundation research: {0}/{1} completed.</ResearchQueue_FoundationsRequired>
+  <ResearchQueue_EraCompletionRequired>Meet Node Research's era completion requirement: {0}/{1} completed.</ResearchQueue_EraCompletionRequired>
+  <ResearchQueue_FacilitiesRequired>Required linked research facilities: {0}.</ResearchQueue_FacilitiesRequired>
+  <ResearchQueue_AnalysisRequired>Analyze the required items ({0}/{1} completed): {2}.</ResearchQueue_AnalysisRequired>
   <ResearchQueue_OtherRequirements>Research requirements are not currently met. Check the project's research facilities, analysis, inspection, and progression requirements.</ResearchQueue_OtherRequirements>
   <ResearchQueue_ExplicitSnooze>Snoozed by the player.</ResearchQueue_ExplicitSnooze>
   <ResearchQueue_SnoozedDependency>Excluded by a snoozed prerequisite. Restore that prerequisite to make this project eligible again.</ResearchQueue_SnoozedDependency>

@@ -1,6 +1,6 @@
 # Research Queue Design
 
-Status: workable local test build, deployed for RimWorld 1.6 and 1.7. Offline checks and isolated 1.7 regression and optional-mod smoke tests pass. Broader pack and campaign validation remains.
+Status: reviewed local test build. All six review findings are addressed; dual builds, 25 offline checks, and 72 self-contained in-game assertions pass. Broader campaign and 1.6 runtime validation remain.
 
 Last updated: October 15, 2026.
 
@@ -129,9 +129,10 @@ The broad queue with a persistent details panel is the current layout direction.
 - Give the queue most of the screen's width and height. Roughly 20 visible projects is an initial capacity estimate to test, not a required minimum, a fixed visible count, or a limit on queue length. Scroll for longer queues.
 - Place the research-system tabs at the top of the screen. Below them, keep the existing research filter and the days/date estimate selector in a compact row for the selected system.
 - Place current research in a compact strip above the queue, showing its name, progress, and estimated completion.
+- Keep the selected project title and Snooze, Restore, and Research next in a fixed area above scrolling details, so long unlock lists cannot bury the actions.
 - Use the same research-card contents as Semi-Random Research; do not define a separate custom set of card fields. Inspect its drawing code to establish the exact contents. Queue position, drag reordering, snoozing, and the agreed cumulative completion estimate still need to be accommodated around that presentation; their exact placement remains to be designed.
 - Highlight the selected card and show its research details in a narrower panel on the right. Include unlocks, research cost, progress where applicable, and the cumulative completion estimate.
-- Provide Queue and Snoozed views so players can inspect and restore excluded research. The exact snoozed-view layout remains open.
+- Provide Queue and Snoozed views so players can inspect and restore excluded research. Explicit snoozes can be restored from the fixed action area.
 - Keep details outside the cards so inspecting a project does not expand the list or move other entries.
 - Mark newly appended research cards with a subtle "New" indicator so additions are noticeable without a popup. Keep the indicator when a card is selected; clear it when the research screen is closed.
 
@@ -210,21 +211,23 @@ Research Queue follows this estimate behavior, including shorter available histo
 
 ## Construction status
 
-### Current workable test build
+### Current reviewed test build
 
-The standalone mod is implemented in `C:\Users\crues\source\repos\RimWorld\ResearchQueue`, package ID `cruesoe.researchqueue`. Both Release builds pass with zero warnings/errors. Eighteen offline queue/rate checks and translation-key checks pass. The standard deployment verified six runtime files with zero missing, extra, or mismatched files.
+The standalone mod is implemented in `C:\Users\crues\source\repos\RimWorld\ResearchQueue`, package ID `cruesoe.researchqueue`. Both Release targets compile with zero warnings/errors; 25 offline queue/rate/viewport checks and translation-key validation pass. The standard deployment verifies six runtime files with zero missing, extra, or mismatched files.
 
-The user confirmed manual drag reordering works. Native filtering preserves queue positions, and Research next moves an entry without interrupting current research. The actual Semi-Random Research card renderer supplied the icon/name/cost geometry, era and special-system palette, separators, tint, progress fill, selected border, and foundation/emergence tags. The native reorder pattern follows Research Dashboard. There are no sibling build or runtime dependencies.
+All six approved review findings are addressed. Dragging maps visible identities around retained missing definitions. Node's legacy queue is retired during handover; ineligible entries persist in a deferred list and return when eligible. Existing save identifiers are retained and the deferred-list Scribe field is additive. Queue snapshots cache projects and true positions, while expensive card work is limited to the viewport. Native dragging still registers every row's geometry.
 
-A paused-load bug was found and fixed: explicit snoozes were saved correctly, but the derived exclusion cache was empty until the first tick. FinalizeInit now rebuilds that cache before the screen can use it. The integration suite loads the original failing save, changes priorities and snoozes, saves again, and reloads while paused.
+The selected title and Snooze/Restore/Research next actions stay above the scrolling details. A visual Carpet-making check confirmed that the long unlock list can scroll without hiding these actions, and Research next works while filtering without interrupting the current project. Blocker messages now identify native mechanitor, inspection, facility, analysis, and techprint requirements and Node's era/foundation/emergence gates.
 
-Sixty-three in-game regression checks passed in the disposable core/Anomaly run, including paused-load restoration, order persistence, selection ownership, completion advancement, append ordering, blocked-current handling, cumulative estimates, saved rate history, and Anomaly slot isolation. Both days and approximate-date displays were inspected. Positive rates were seeded for calculation tests rather than measured over a ten-day campaign. The user subsequently authorized autonomous fixes and tests, superseding the earlier stop-and-ask workflow.
+The repository's development-only integration fixture no longer depends on an external saved colony. Tools/Start-IntegrationTests.ps1 creates separate temporary save data and uses the game's native quicktest generator. The explicit test flag enables a self-contained research baseline, real hourly progress/idle samples, save/reload checks, and viewport/cache checks using 1,000 render-only rows.
 
-Sixteen additional smoke checks passed with Node Research, Vanilla Gravship Expanded Chapter 1, and Vanilla Expanded Framework together. Research Queue owns the research screen; Node's collapsed Main tabs and generated emergence definitions remain; queue routing has no duplicates; and Gravtech selection and snoozing preserve Standard research. These smoke checks do not establish every optional-mod combination or a full Progression campaign.
+Seventy-two assertions passed across four self-contained 1.7 suites: core/Anomaly (30), Node Research alone (14), Vanilla Gravship Expanded Chapter 1 with Vanilla Expanded Framework (9), and Node plus Gravtech/Framework (19). Gravtech selection and completion are automatic in these tests; no direct Start call supplies their current project. Node tests complete foundations, automatically select emergence, and verify actual era advancement and legacy handover. No attributed error, type-load exception, or UnityStubs warning appeared in the final logs.
 
-Logs and saves are retained under `Projects/Generated/ResearchQueueColony-20261015-115535/` and `ResearchQueueColony-20261015-115802/`. Detailed results and limitations are in the mod repository's Docs/ColonyTest.md and Docs/Implementation.md. The development-only integration harness is retained under Tests/Integration and is excluded from production deployment. The temporary test fixture is removed from the game after testing. The real active mod configuration was verified unchanged. No established colony, release, publication, commit, or push was involved.
+The detailed changes and limits are recorded in the mod repository's Docs/ReviewFixes.md, Docs/Implementation.md, and Docs/ColonyTest.md. Captured reports/logs are retained under `Projects/Generated/ResearchQueueReviewTests/`. The 1,000-row case tests UI work rather than full campaign performance with distinct research definitions. The 1.6 runtime, full Progression pack, sustained ten-day history, other optional systems, and all display scales still need broader validation.
 
-The initial implementation retains unknown saved definition names rather than silently deleting them. Blocked pending entries retain their positions; a blocked current project returns to the head of pending research while an eligible replacement proceeds. Clearing its requirements does not interrupt that replacement. Broader display-scale, large-pack, and long campaign testing remains as listed above.
+The actual Semi-Random Research card drawing patterns remain the visual reference. The user confirmed manual native dragging in the earlier build; automated physical gestures remain unreliable. No mockup styling, custom category classifier, era view, or new research costs were added. Twenty visible projects remains an estimate rather than a fixed limit.
+
+The original uncommitted mod was preserved in a separate baseline commit before the review fixes. Source is committed locally; publishing a public GitHub repository awaits explicit authorization. No Workshop upload or release is included. The temporary test fixture is removed after testing, and the current real mod configuration is preserved.
 
 ### Previously verified skeleton
 

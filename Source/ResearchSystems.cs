@@ -44,15 +44,27 @@ namespace ResearchQueue
         public static string BlockReason(ResearchProjectDef project)
         {
             if (project.IsFinished) return "ResearchQueue_Completed".Translate();
+            List<string> reasons = new List<string>();
+            string? nodeReason = NodeResearchBridge.BlockReason(project);
+            if (nodeReason != null) reasons.Add(nodeReason);
             List<ResearchProjectDef> missing = Prerequisites(project).Where(p => !p.IsFinished).ToList();
-            if (missing.Count > 0) return "ResearchQueue_Requires".Translate(string.Join(", ", missing.Select(p => p.LabelCap.ToString())));
-            if (!project.TechprintRequirementMet) return "ResearchQueue_TechprintsRequired".Translate();
+            if (missing.Count > 0) reasons.Add("ResearchQueue_Requires".Translate(string.Join(", ", missing.Select(p => p.LabelCap.ToString()))));
+            if (!project.TechprintRequirementMet) reasons.Add("InsufficientTechprintsApplied".Translate(project.TechprintsApplied, project.TechprintCount));
             if (project.requiredResearchBuilding != null && !project.PlayerHasAnyAppropriateResearchBench)
-                return "ResearchQueue_Requires".Translate(project.requiredResearchBuilding.LabelCap);
-            if (project.IsHidden) return "ResearchQueue_DiscoveryRequired".Translate();
+            {
+                reasons.Add("ResearchQueue_Requires".Translate(project.requiredResearchBuilding.LabelCap));
+                if (project.requiredResearchFacilities != null && project.requiredResearchFacilities.Count > 0)
+                    reasons.Add("ResearchQueue_FacilitiesRequired".Translate(string.Join(", ", project.requiredResearchFacilities.Select(f => f.LabelCap.ToString()))));
+            }
+            if (!project.PlayerMechanitorRequirementMet) reasons.Add("MissingRequiredMechanitor".Translate());
+            if (!project.InspectionRequirementsMet) reasons.Add("MissingGravEngineInspection".Translate());
+            if (!project.AnalyzedThingsRequirementsMet)
+                reasons.Add("ResearchQueue_AnalysisRequired".Translate(project.AnalyzedThingsCompleted, project.RequiredAnalyzedThingCount,
+                    string.Join(", ", project.requiredAnalyzed.Select(t => t.LabelCap.ToString()))));
+            if (project.IsHidden) reasons.Add("ResearchQueue_DiscoveryRequired".Translate());
             if (IsAnomaly(project) && (Find.Anomaly == null || !Find.Anomaly.AnomalyStudyEnabled))
-                return "ResearchQueue_StudyRequired".Translate();
-            return "ResearchQueue_OtherRequirements".Translate();
+                reasons.Add("ResearchQueue_StudyRequired".Translate());
+            return reasons.Count > 0 ? string.Join("\n", reasons) : "ResearchQueue_OtherRequirements".Translate().ToString();
         }
     }
 }

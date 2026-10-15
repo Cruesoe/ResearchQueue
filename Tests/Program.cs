@@ -54,4 +54,19 @@ float first = QueueRules.CompletionDays(200f, 100f, 0f);
 float second = first + QueueRules.CompletionDays(300f, 100f, 0f);
 float third = second + QueueRules.CompletionDays(100f, 100f, 0f);
 Check(first == 2f && second == 5f && third == 6f, "Queue estimates are cumulative");
+List<string> recovery = new List<string> { "missing", "A", "B", "C" };
+QueueRules.MoveVisible(recovery, new[] { "A", "B", "C" }, 0, 2);
+Check(recovery.SequenceEqual(new[] { "missing", "B", "A", "C" }), "Visible drop maps around retained missing definitions");
+QueueRules.MoveVisible(recovery, new[] { "B", "A", "C" }, 2, 0);
+Check(recovery.SequenceEqual(new[] { "missing", "C", "B", "A" }), "Upward visible move preserves unknown names");
+QueueRules.MoveVisible(recovery, new[] { "C", "B", "A" }, 0, 3);
+Check(recovery.SequenceEqual(new[] { "missing", "B", "A", "C" }), "Drop at end retains hidden definitions");
+string[] unchanged = recovery.ToArray();
+QueueRules.MoveVisible(recovery, new[] { "B", "A", "C" }, 1, 2);
+Check(recovery.SequenceEqual(unchanged), "Adjacent drop is inert");
+Check(QueueRules.FirstVisibleRow(1000, 540f, 54f) == 10 && QueueRules.EndVisibleRow(1000, 540f, 810f, 54f) == 25,
+    "Thousand-entry queue renders only fifteen full viewport rows");
+Check(QueueRules.FirstVisibleRow(0, 0f, 54f) == 0 && QueueRules.EndVisibleRow(0, 0f, 810f, 54f) == 0,
+    "Empty viewport range is safe");
+Check(QueueRules.EndVisibleRow(1000, 541f, 810f, 54f) == 26, "Partly visible final row is included");
 Console.WriteLine($"PASS: {checks} offline queue and rate checks.");

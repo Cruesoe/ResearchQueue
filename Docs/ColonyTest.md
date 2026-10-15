@@ -1,40 +1,37 @@
 # Research Queue colony tests
 
-Date: October 15, 2026. Result: workable local test build.
+October 15, 2026. All six approved review findings are addressed and tested.
 
-## Environment and evidence
+## Current runs
 
-RimWorld 1.7.4979 rev109, Harmony 3.0, all official DLCs, and Research Queue. Tests used separate savedatafolder directories and disposable Dev quicktest colonies. The real ModsConfig.xml SHA-256 remained `24140A4EA576AB0C956CD97752897051ABEEE870C7E5CEFE0A9FBCD88EB8C092`.
+RimWorld 1.7.4979 rev109, Harmony 3.0, and official DLCs. Every run uses a fresh temporary savedatafolder and native quicktest colony generation; no existing save is required. The fixture creates its own research baseline. It runs only with the explicit researchQueueTests flag.
 
-- Original automatic-population/UI test: `Projects/Generated/ResearchQueueColony-20261015-110209/`.
-- Original failed-reload save: `Projects/Generated/ResearchQueueColony-20261015-111423/Saves/New Arrivals2.rws`.
-- Final core/Anomaly regression: `Projects/Generated/ResearchQueueColony-20261015-115535/Integration.txt`, 63 PASS checks and COMPLETE.
-- Node Research plus Vanilla Gravship Expanded Chapter 1 and Vanilla Expanded Framework: `Projects/Generated/ResearchQueueColony-20261015-115802/Integration.txt`, 16 PASS checks and COMPLETE.
+| Suite | Assertions | Result |
+| --- | ---: | --- |
+| Core and Anomaly | 30 | COMPLETE |
+| Node Research alone | 14 | COMPLETE |
+| Vanilla Gravship Expanded Chapter 1 and Vanilla Expanded Framework | 9 | COMPLETE |
+| Node plus Gravtech and Framework | 19 | COMPLETE |
 
-## Verified
+Reports and logs are retained in the control project under `Generated/ResearchQueueReviewTests/{Core,Node,Gravtech,Combined}`. The earlier save-dependent runs remain under `Generated/ResearchQueueColony-*` as historical evidence.
 
-- Research auto-selected Recurve bow and queued 30 pending projects before the screen was first opened.
-- The actual screen uses the Semi-Random Research drawing patterns. The user confirmed manual drag reordering works. Automated drag gestures selected the destination without reordering; no native-drag replacement was made.
-- Native filtering retained actual queue positions. Research next moved Carpet-making from position 30 to 1 without interrupting current work. Snooze removed it and exposed Restore in Snoozed.
-- The paused-reload bug was fixed: exclusion state now rebuilds during FinalizeInit, without waiting for a tick. The original regression save and a fresh round trip both passed.
-- Manual priorities, active research, explicit snoozes, and positive rate estimates survive loading while paused. Restore after loading appends to the end.
-- Completion selects the player's next eligible priority, preserves remaining order, and appends newly available research sorted within the new batch.
-- Normal research selection cannot bypass the queue.
-- A blocked active project returns to the head of pending research and yields to eligible research. Clearing the blocker does not interrupt the replacement. Blocked entries have no completion estimate.
-- Each cumulative estimate includes active remaining work and every preceding runnable entry. These calculations used seeded measured-rate history. Days and approximate-date displays were inspected in game and rendered correctly.
-- Anomaly Basic selection, snoozing, and restoration use their own slot/state and preserve Standard research and priorities.
-- With Node and VGE active, Research Queue owns the research window; Node's tab collapse and generated emergence definitions remain; projects route to separate queues without duplicates. VGE selects and snoozes its own Gravtech slot without interrupting Standard research.
+## What passed
 
-## Logs and deployment
+- Automatic initial population/selection without opening research; selection ownership; snooze/restore; progress preservation; completion advancement and appending; retained blocked priorities; and independent Anomaly operations.
+- Real game progress deltas and an idle hour recorded by native hourly sampling, followed by persistence of measured history, priorities, and snoozes across a save/reload. Calculations no longer rely solely on seeded history.
+- Missing-definition drag mapping through the actual queue state, plus offline upward/downward/end-boundary regressions.
+- Node foundation gating, specific blocker text, automatic emergence selection, and actual era advancement. Legacy entries transfer before Node's completion callback can consume them; deferred entries return when their era becomes eligible.
+- Automatic Gravtech selection and completion advancement, tested alone and with Node. The fixture never directly calls ResearchQueueRuntime.Start to supply the tested Gravtech project. Standard research continues independently.
+- Actual rendering of a 1,000-row view draws only viewport cards, and repeated GUI passes reuse the cached snapshot. Native dragging still registers all row rectangles. The render-only stress rows repeat a real project reference; this is not a full distinct-definition campaign benchmark.
+- Blocker messages name research benches, linked facilities, required analysis items, mechanitors, inspection, and Node foundations.
+- Visual Carpet-making check: the title and action buttons stayed fixed while its long unlock list scrolled. Research next moved it from position 32 to 1 while filtering without interrupting Psychoid brewing. The native filter retained true queue positions.
 
-The final runs contained no error, ReflectionTypeLoadException, or UnityStubs warning attributable to Research Queue. Optional-mod loading of the disposable baseline emitted framework migration warnings about missing think nodes and newly introduced precepts. The temporary fixture metadata also emitted a missing dependency-download-link warning; the fixture is not shipped with Research Queue. These were not Research Queue runtime failures.
+## Build, deployment, and cleanup
 
-Both production Release builds passed with zero warnings/errors. Eighteen offline queue/rate checks and translation-key checks passed. The standard production deploy verified six files with zero missing, extra, or mismatched files. The temporary fixture is excluded from production deployment and removed from the game installation after testing.
+Both production Release builds and the integration fixture compile with zero warnings/errors. Twenty-five offline checks and translation-key validation pass. The standard production deploy verifies six files with zero missing, extra, or mismatched files. Final run logs contain no Research Queue error, ReflectionTypeLoadException, or UnityStubs warning from its code. Installed-mod discovery and engine warnings unrelated to Research Queue are not treated as its failures.
 
-## Remaining broader testing
+The real mod configuration differs from the earlier session snapshot; its last write predates the review-fix test runs, and its current contents were preserved. The temporary game processes and fixture installation are removed after testing. Production deployment excludes all source, tests, tools, and docs.
 
-- RimWorld 1.6 runtime, full Progression-pack and long campaign testing, and other optional-mod combinations.
-- Dependent-confirmation popup interaction, all supported display/UI scales, and sustained research throughput with hundreds or thousands of projects.
-- Actual elapsed ten-day research history, full Anomaly progression, and all Gravtech progression rather than slot-level smoke checks.
+## Broader testing
 
-No established colony was modified. No release or publication was performed.
+RimWorld 1.6 is compile-checked only. Full Progression-pack campaigns, additional optional research systems, all display scales, dependent-confirmation popup interaction, sustained ten-day research history, and throughput with thousands of distinct definitions remain broader validation. The user previously confirmed manual native dragging; automated physical gestures remain unreliable. No Workshop release was performed.

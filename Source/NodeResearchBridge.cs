@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
@@ -12,6 +13,11 @@ namespace ResearchQueue
         private static MethodInfo? collapse;
         private static FieldInfo? queueField;
         private static Dictionary<ResearchProjectDef, ResearchTabDef>? originalTabs;
+        private static FieldInfo? settingsField;
+        private static FieldInfo? restrictEra;
+        private static FieldInfo? emergenceEnabled;
+        private static FieldInfo? advancementMode;
+        private static MethodInfo? advancementProgress;
 
         private static void Resolve()
         {
@@ -26,6 +32,17 @@ namespace ResearchQueue
                 originalTabs = AccessTools.Field(startup, "originalTabs")?.GetValue(null) as Dictionary<ResearchProjectDef, ResearchTabDef>;
             }
             if (state != null) queueField = AccessTools.Field(state, "researchQueue");
+            Type? mod = AccessTools.TypeByName("BetterResearchMenu.BetterResearchMenuMod");
+            settingsField = mod == null ? null : AccessTools.Field(mod, "settings");
+            Type? settings = settingsField?.FieldType;
+            if (settings != null)
+            {
+                restrictEra = AccessTools.Field(settings, "restrictResearchToTechLevel");
+                emergenceEnabled = AccessTools.Field(settings, "enableEmergence");
+                advancementMode = AccessTools.Field(settings, "advancementTiedTo");
+            }
+            Type? window = AccessTools.TypeByName("BetterResearchMenu.MainTabWindow_BetterResearch");
+            if (window != null) advancementProgress = AccessTools.Method(window, "GetAdvancementProgressRaw");
         }
 
         public static void Prepare()
@@ -35,10 +52,33 @@ namespace ResearchQueue
             collapse?.Invoke(null, null);
         }
 
-        public static IEnumerable<string> LegacyQueue()
+        public static IReadOnlyList<string> TakeLegacyQueue()
         {
             Resolve();
-            return queueField?.GetValue(null) as List<string> ?? new List<string>();
+            List<string>? legacy = queueField?.GetValue(null) as List<string>;
+            if (legacy == null || legacy.Count == 0) return Array.Empty<string>();
+            string[] snapshot = legacy.ToArray();
+            legacy.Clear();
+            return snapshot;
+        }
+
+        public static string? BlockReason(ResearchProjectDef project)
+        {
+            Resolve();
+            object? settings = settingsField?.GetValue(null);
+            if (settings == null) return null;
+            if (restrictEra?.GetValue(settings) is true && !ResearchSystems.IsAnomaly(project) &&
+                ResearchSystems.Key(project) != ResearchSystems.Gravship && project.techLevel > Faction.OfPlayer.def.techLevel)
+                return "ResearchQueue_EraRequired".Translate(project.techLevel.ToStringHuman());
+            if (project.modExtensions?.Exists(e => e.GetType().Name == "EmergenceExtension") != true) return null;
+            if (emergenceEnabled?.GetValue(settings) is false) return "ResearchQueue_EmergenceDisabled".Translate();
+            if (advancementProgress == null) return null;
+            object[] args = { project.techLevel, ResearchTabDefOf.Main, 0, 0 };
+            float progress = (float)advancementProgress.Invoke(null, args)!;
+            if (progress >= 1f) return null;
+            string key = advancementMode?.GetValue(settings)?.ToString() == "Foundations"
+                ? "ResearchQueue_FoundationsRequired" : "ResearchQueue_EraCompletionRequired";
+            return key.Translate((int)args[2], (int)args[3]);
         }
 
         public static ResearchTabDef? OriginalTab(ResearchProjectDef project)

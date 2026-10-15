@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ResearchQueue.Core;
 using ResearchQueue.State;
 using RimWorld;
 using UnityEngine;
@@ -21,6 +22,15 @@ namespace ResearchQueue.UI
         private int cachedRevision = -1;
         private string cachedSystem = string.Empty;
         private Dictionary<string, float> estimates = new Dictionary<string, float>();
+        private int viewRevision = -1;
+        private string viewSystem = string.Empty;
+        private bool viewSnoozed;
+        private List<QueueViewEntry> viewEntries = new List<QueueViewEntry>();
+        private string[] viewIds = Array.Empty<string>();
+        private HashSet<string> newIds = new HashSet<string>();
+        private ResearchProjectDef? viewActive;
+        public int LastDrawnRowCount { get; private set; }
+        public int ViewBuildCount { get; private set; }
 
         protected override float Margin => 12f;
         public override Vector2 InitialSize => new Vector2(Verse.UI.screenWidth, Verse.UI.screenHeight - 35f);
@@ -41,6 +51,7 @@ namespace ResearchQueue.UI
             showingSnoozed = false;
             reorderGroup = -1;
             cachedRevision = -1;
+            viewRevision = -1;
         }
 
         public override void PostClose()
@@ -55,18 +66,19 @@ namespace ResearchQueue.UI
             ResearchQueueWorldComponent? tracker = ResearchQueueWorldComponent.Get();
             if (tracker == null) return;
             if (tracker.Queues.Count == 0) tracker.RefreshQueues();
+            float y = DrawSystemTabs(canvas, tracker);
+            DrawToolbar(new Rect(0f, y, canvas.width, 32f));
+            RefreshView(tracker);
             if (cachedRevision != tracker.Revision || cachedSystem != selectedSystem)
             {
                 estimates = tracker.Estimates(selectedSystem);
                 cachedRevision = tracker.Revision;
                 cachedSystem = selectedSystem;
             }
-            float y = DrawSystemTabs(canvas, tracker);
-            DrawToolbar(new Rect(0f, y, canvas.width, 32f));
             y += 44f;
             float detailsWidth = Mathf.Clamp(canvas.width * 0.27f, 270f, 430f);
             float queueWidth = canvas.width - detailsWidth - 20f;
-            ResearchProjectDef? active = tracker.Active(selectedSystem).FirstOrDefault();
+            ResearchProjectDef? active = viewActive;
             Widgets.Label(new Rect(0f, y, queueWidth, 24f), "ResearchQueue_Current".Translate());
             y += 26f;
             if (active != null)
@@ -105,7 +117,8 @@ namespace ResearchQueue.UI
 
         private void DrawToolbar(Rect rect)
         {
-            search.OnGUI(new Rect(rect.x, rect.y, Mathf.Min(rect.width * 0.42f, 420f), 30f));
+            search.OnGUI(new Rect(rect.x, rect.y, Mathf.Min(rect.width * 0.42f, 420f), 30f),
+                () => viewRevision = -1, () => viewRevision = -1);
             float x = Mathf.Min(rect.width * 0.42f, 420f) + 12f;
             if (Widgets.ButtonText(new Rect(x, rect.y, 110f, 30f), "ResearchQueue_Queue".Translate()))
             { showingSnoozed = false; reorderGroup = -1; }
@@ -129,36 +142,74 @@ namespace ResearchQueue.UI
             ResearchQueueMod.Instance.WriteSettings();
         }
 
+        private void RefreshView(ResearchQueueWorldComponent tracker)
+        {
+            if (viewRevision == tracker.Revision && viewSystem == selectedSystem && viewSnoozed == showingSnoozed) return;
+            viewEntries = new List<QueueViewEntry>();
+            ResearchSystemQueueState queue = tracker.Queue(selectedSystem);
+            if (showingSnoozed)
+            {
+                foreach (ResearchProjectDef project in tracker.Snoozed(selectedSystem))
+                    if (!search.filter.Active || search.filter.Matches(ResearchCard.Label(project)))
+                        viewEntries.Add(new QueueViewEntry(project, null));
+            }
+            else
+            {
+                for (int i = 0; i < queue.ProjectIds.Count; i++)
+                {
+                    ResearchProjectDef? project = tracker.Resolve(queue.ProjectIds[i]);
+                    if (project != null && (!search.filter.Active || search.filter.Matches(ResearchCard.Label(project))))
+                        viewEntries.Add(new QueueViewEntry(project, i + 1));
+                }
+            }
+            viewIds = viewEntries.Select(e => e.Project.defName).ToArray();
+            newIds = new HashSet<string>(queue.NewProjectIds);
+            viewActive = tracker.Active(selectedSystem).FirstOrDefault();
+            viewSystem = selectedSystem;
+            viewSnoozed = showingSnoozed;
+            viewRevision = tracker.Revision;
+            ViewBuildCount++;
+        }
+
+        private static Rect CardRect(Rect row, bool numbered) => new Rect(row.x + (numbered ? 44f : 0f), row.y,
+            Mathf.Max(150f, row.width - (numbered ? 44f : 0f) - 185f), row.height);
+
         private void DrawQueue(Rect rect, ResearchQueueWorldComponent tracker)
         {
-            ResearchSystemQueueState queue = tracker.Queue(selectedSystem);
-            ResearchProjectDef[] projects = showingSnoozed ? tracker.Snoozed(selectedSystem).ToArray() :
-                queue.ProjectIds.Select(tracker.Resolve).Where(p => p != null).Cast<ResearchProjectDef>().ToArray();
             bool filtered = search.filter.Active;
             Vector2 scroll = scrollBySystem.TryGetValue(selectedSystem + showingSnoozed, out Vector2 value) ? value : Vector2.zero;
-            ResearchProjectDef[] visible = projects.Where(p => !filtered || search.filter.Matches(ResearchCard.Label(p))).ToArray();
-            Rect view = new Rect(0f, 0f, rect.width - 18f, Mathf.Max(rect.height, visible.Length * 54f));
+            Rect view = new Rect(0f, 0f, rect.width - 18f, Mathf.Max(rect.height, viewEntries.Count * 54f));
             Widgets.BeginScrollView(rect, ref scroll, view);
             try
             {
-                if (visible.Length == 0) Widgets.Label(new Rect(0f, 0f, view.width, 60f),
+                if (viewEntries.Count == 0) Widgets.Label(new Rect(0f, 0f, view.width, 60f),
                     (showingSnoozed ? "ResearchQueue_NoSnoozed" : "ResearchQueue_NoQueued").Translate());
                 if (!showingSnoozed && !filtered && Event.current.type == EventType.Repaint)
                 {
-                    reorderGroup = ReorderableWidget.NewGroup((from, to) =>
+                    string[] ids = viewIds;
+                    int revision = tracker.Revision;
+                    reorderGroup = ReorderableWidget.NewGroup((from, boundary) =>
                     {
-                        if (from < 0 || from >= projects.Length || to < 0 || to > projects.Length) return;
-                        int target = to > from ? to - 1 : to;
-                        tracker.Move(projects[from], target);
+                        if (tracker.Revision == revision) tracker.MoveVisible(ids, from, boundary);
                     }, ReorderableDirection.Vertical, Rect.zero, 12f);
                 }
                 if (showingSnoozed || filtered) reorderGroup = -1;
-                for (int i = 0; i < visible.Length; i++)
+                int first = QueueRules.FirstVisibleRow(viewEntries.Count, scroll.y, 54f);
+                int end = QueueRules.EndVisibleRow(viewEntries.Count, scroll.y, rect.height, 54f);
+                LastDrawnRowCount = 0;
+                bool registerAll = reorderGroup >= 0 && Event.current.type == EventType.Repaint;
+                for (int i = registerAll ? 0 : first; i < (registerAll ? viewEntries.Count : end); i++)
                 {
-                    ResearchProjectDef project = visible[i];
-                    int? position = showingSnoozed ? (int?)null : queue.ProjectIds.IndexOf(project.defName) + 1;
+                    QueueViewEntry entry = viewEntries[i];
                     Rect row = new Rect(0f, i * 54f, view.width, ResearchCard.Height);
-                    DrawProject(row, project, tracker, position, showingSnoozed, reorderGroup >= 0);
+                    if (i >= first && i < end)
+                    {
+                        DrawProject(row, entry.Project, tracker, entry.Position, showingSnoozed,
+                            reorderGroup >= 0 && !registerAll);
+                        LastDrawnRowCount++;
+                    }
+                    // Register every row after its card so native drag highlights remain visible.
+                    if (registerAll) ReorderableWidget.Reorderable(reorderGroup, CardRect(row, true));
                 }
             }
             finally { Widgets.EndScrollView(); }
@@ -171,7 +222,7 @@ namespace ResearchQueue.UI
             bool blocked = !snoozed && !ResearchSystems.CanStart(project);
             float indexWidth = position.HasValue ? 44f : 0f;
             float etaWidth = 185f;
-            Rect card = new Rect(row.x + indexWidth, row.y, Mathf.Max(150f, row.width - indexWidth - etaWidth), row.height);
+            Rect card = CardRect(row, position.HasValue);
             Text.Anchor = TextAnchor.MiddleLeft;
             if (position.HasValue) Widgets.Label(new Rect(row.x, row.y, indexWidth, row.height), position.Value.ToString());
             float costWidth = Mathf.Max(65f, Text.CalcSize(ResearchCard.Cost(project)).x + 12f);
@@ -207,7 +258,7 @@ namespace ResearchQueue.UI
             }
             else
             {
-                bool isNew = tracker.Queue(ResearchSystems.Key(project)).NewProjectIds.Contains(project.defName);
+                bool isNew = newIds.Contains(project.defName);
                 string eta = Estimate(project);
                 if (isNew)
                 {
@@ -237,15 +288,18 @@ namespace ResearchQueue.UI
         {
             ResearchProjectDef? project = selectedId != null ? tracker.Resolve(selectedId) : null;
             if (project == null) return;
+            Text.Font = GameFont.Medium;
+            Widgets.Label(new Rect(rect.x, rect.y, rect.width, 40f), ResearchCard.Label(project));
+            Text.Font = GameFont.Small;
+            Rect actions = new Rect(rect.x, rect.y + 48f, rect.width, 80f);
+            DrawActions(actions, project, tracker);
+            rect.y += 140f;
+            rect.height = Mathf.Max(0f, rect.height - 140f);
             Rect view = new Rect(0f, 0f, rect.width - 18f, DetailsHeight(project, rect.width - 18f));
             Widgets.BeginScrollView(rect, ref detailsScroll, view);
             try
             {
                 float y = 0f;
-                Text.Font = GameFont.Medium;
-                Widgets.Label(new Rect(0f, y, view.width, 40f), ResearchCard.Label(project));
-                Text.Font = GameFont.Small;
-                y += 48f;
                 string description = project.description ?? string.Empty;
                 float descriptionHeight = Text.CalcHeight(description, view.width);
                 Widgets.Label(new Rect(0f, y, view.width, descriptionHeight), description);
@@ -272,23 +326,28 @@ namespace ResearchQueue.UI
                     TooltipHandler.TipRegion(new Rect(0f, y, view.width, 30f), unlock.description ?? ResearchCard.Label(unlock));
                     y += 34f;
                 }
-                y += 12f;
+            }
+            finally { GUI.color = Color.white; Widgets.EndScrollView(); }
+        }
+
+        private void DrawActions(Rect rect, ResearchProjectDef project, ResearchQueueWorldComponent tracker)
+        {
+                bool snoozed = tracker.IsExcluded(project.defName);
                 if (snoozed)
                 {
                     bool explicitSnooze = tracker.Queue(ResearchSystems.Key(project)).SnoozedProjectIds.Contains(project.defName);
-                    ActionButton(new Rect(0f, y, view.width, 32f), "ResearchQueue_Restore".Translate(), explicitSnooze,
+                    ActionButton(new Rect(rect.x, rect.y, rect.width, 32f), "ResearchQueue_Restore".Translate(), explicitSnooze,
                         tracker.SnoozeReason(project), () => tracker.Restore(project));
                 }
                 else
                 {
-                    if (Widgets.ButtonText(new Rect(0f, y, view.width, 32f), "ResearchQueue_Snooze".Translate())) ConfirmSnooze(project, tracker);
-                    y += 40f;
+                    ActionButton(new Rect(rect.x, rect.y, rect.width, 32f), "ResearchQueue_Snooze".Translate(), !project.IsFinished,
+                        "ResearchQueue_Completed".Translate(), () => ConfirmSnooze(project, tracker));
                     bool canMove = ResearchSystems.CanStart(project) && tracker.Queue(selectedSystem).ProjectIds.Contains(project.defName);
-                    ActionButton(new Rect(0f, y, view.width, 32f), "ResearchQueue_Next".Translate(), canMove,
-                        ResearchSystems.BlockReason(project), () => tracker.Move(project, 0));
+                    ActionButton(new Rect(rect.x, rect.y + 40f, rect.width, 32f), "ResearchQueue_Next".Translate(), canMove,
+                        Find.ResearchManager.IsCurrentProject(project) ? "InProgress".Translate().ToString() : ResearchSystems.BlockReason(project),
+                        () => tracker.Move(project, 0));
                 }
-            }
-            finally { GUI.color = Color.white; Widgets.EndScrollView(); }
         }
 
         private static float DetailsHeight(ResearchProjectDef project, float width) => 360f +

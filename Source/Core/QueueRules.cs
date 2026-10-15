@@ -67,6 +67,23 @@ namespace ResearchQueue.Core
             queue.Insert(Math.Max(0, Math.Min(index, queue.Count)), id);
         }
 
+        public static void MoveVisible(List<string> queue, IReadOnlyList<string> visible, int from, int boundary)
+        {
+            if (from < 0 || from >= visible.Count || boundary < 0 || boundary > visible.Count ||
+                boundary == from || boundary == from + 1) return;
+            string id = visible[from];
+            string? before = boundary < visible.Count ? visible[boundary] : null;
+            if (!queue.Contains(id) || (before != null && !queue.Contains(before))) return;
+            queue.Remove(id);
+            queue.Insert(before == null ? queue.Count : queue.IndexOf(before), id);
+        }
+
+        public static int FirstVisibleRow(int count, float offset, float pitch) =>
+            Math.Max(0, Math.Min(count, (int)Math.Floor(Math.Max(0f, offset) / pitch)));
+
+        public static int EndVisibleRow(int count, float offset, float height, float pitch) =>
+            Math.Max(0, Math.Min(count, (int)Math.Ceiling((Math.Max(0f, offset) + Math.Max(0f, height)) / pitch)));
+
         public static float Average(IReadOnlyList<float> rates)
         {
             if (rates.Count == 0) return 0f;

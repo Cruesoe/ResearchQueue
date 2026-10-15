@@ -2,34 +2,30 @@
 
 ## Current state
 
-Workable local test build, October 15, 2026. Both Release targets compile with zero warnings or errors. The standard deployment verified six runtime files with zero missing, extra, or mismatched files. Eighteen offline checks, 63 in-game regression checks, and 16 optional-mod checks passed. See ColonyTest.md for evidence and limits.
+Reviewed local test build, October 15, 2026. All six approved findings are fixed; see ReviewFixes.md. Both production Release targets compile without warnings/errors. Twenty-five offline checks and translation-key validation pass. Seventy-two in-game assertions pass across four self-contained 1.7 suites. The standard deploy verifies six runtime files with no missing, extra, or mismatched files.
 
-## Implemented
+## Queue and persistence
 
-- Automatic selection and append-only queues without opening the screen. New batches sort by era, then total CostApparent, with randomized ties; existing priorities stay intact.
-- Separate Standard, knowledge-category, and Gravtech queues, using their actual current-project slots.
-- Saved order, snoozes, New markers, and hourly rate history. Missing definition names retain their saved positions.
-- Snoozing with transitive dependency exclusion, optional dependent-only confirmation, restoration at the end, and preserved research progress.
-- Blocked pending entries retain their positions and are skipped. A blocked current project returns to the head of the pending queue; eligible research proceeds. Restored requirements do not interrupt its replacement.
-- A full research screen with native filtering, details, Research next, Snoozed views, manual drag reordering, and New markers cleared on closing.
-- Cumulative days or approximate in-game dates, project rates with per-system fallback, idle hours, up to 240 hourly samples, and Unknown without a positive rate.
-- Normal selection blocked at the research manager. Research Queue stands down when Research Auto, Semi-Random Research continued, or Research Dashboard is active.
-- Node Research's Collapse method preserves its advancement counts; eligible legacy entries can be imported once. Original tabs identify Gravtech even with Node present.
+Automatic selection works without opening research. New batches sort by era and total CostApparent, randomize exact ties, and append without sorting existing priorities. Separate Standard, knowledge-category, and Gravtech queues use their actual slots. Queues, snoozes, New markers, hourly history, and deferred Node imports are saved. Missing definition names remain for recovery, and dragging maps visible identities around them.
 
-## Corrections
+Snoozing excludes dependent branches, optionally confirms affected queued dependents, preserves progress, and supports restoration at the end. Blocked pending projects retain position; a blocked current project returns to the head of pending research and yields. Restoring requirements does not interrupt the replacement.
 
-The snoozed state was saved correctly, but its derived exclusion cache was rebuilt only on a game tick. Loading a paused colony therefore showed an empty Snoozed view. FinalizeInit now rebuilds that cache before the first tick. The regression suite loads the original failing save and performs a further save/reload while paused.
+The paused-load exclusion cache rebuilds during FinalizeInit. Existing Scribe labels are retained. The deferred Node list is an additive save field; it preserves ineligible legacy entries while clearing Node's old queue so its completion callback cannot consume or announce a second queue.
 
-Blocked active research now yields without losing its progress or pending priority. This follows the user's authorization to resolve implementation issues and complete the workable build.
+## Interface and estimates
 
-## Drawing provenance
+Native filtering preserves actual positions and cumulative estimates. Dragging is disabled while filtering; Research next remains available when eligible. Queue snapshots cache project identities, positions, New membership, and current research per revision/system/filter/view. Native drag geometry registers all rows, while expensive drawing and eligibility work cover viewport rows only.
 
-The renderer follows the inspected continued Semi-Random Research fork's actual 48-pixel icon/name/cost geometry, era and Anomaly/Gravship palette, separators, tint, progress fill, selected border, and foundation/emergence tags. Its source authors are Cruesoe, Captain Muscles (Nathan Harbour), and Arodoid. Research Dashboard supplied the native ReorderableWidget registration pattern. No artwork was copied. No sibling repository is a production build or runtime dependency.
+The selected title and Snooze/Restore/Research next actions stay above scrolling details. Blockers identify native facilities, analysis, mechanitor, inspection, techprint, and discovery requirements and Node's progression gates. Unknown third-party gates retain a fallback explanation.
+
+Estimates sum remaining runnable work using project rates with per-system fallback. Hourly history includes idle samples and retains up to 240 samples. Days or approximate map-local dates are available; missing positive rates display Unknown.
+
+## Compatibility and drawing
+
+Node's Collapse method preserves advancement counts, and its original tabs identify Gravtech. Tests cover actual foundation/emergence advancement. Gravtech selection and completion are tested automatically, without a direct Start call. Research Queue stands down with Research Auto, Semi-Random Research continued, or Research Dashboard active.
+
+Cards follow the inspected continued Semi-Random Research fork's actual geometry, palette, separators, tint, progress fill, selected border, and foundation/emergence tags. Its source authors are Cruesoe, Captain Muscles (Nathan Harbour), and Arodoid. Research Dashboard supplied the native drag pattern. No artwork was copied, and no sibling project is a production dependency.
 
 ## Validation limits
 
-RimWorld 1.7.4979 rev109 was tested with official DLCs, Harmony, and disposable colonies. RimWorld 1.6 is compile-checked only. Node Research and Vanilla Gravship Expanded Chapter 1 were smoke-tested together with Vanilla Expanded Framework; this does not establish every optional-mod combination or a full Progression campaign. Anomaly Basic slot isolation was exercised; a full Anomaly campaign and all other knowledge-category mods were not.
-
-Positive-rate calculations used seeded test history, not a ten-day colony observation. The dependent-confirmation dialog and all display resolutions remain for broader player testing. About 15 complete cards fit the captured viewport using Small text; 20 is not a hard limit. Automated drag gestures were unreliable; the user confirmed manual dragging works.
-
-The integration harness lives under Tests/Integration. Its runtime fixture is for disposable saves only and is not part of the production deployment. No release, publication, commit, or push was performed.
+See ColonyTest.md for current evidence. The integration runner creates its own temporary colony and research baseline and requires an explicit test flag. It is not deployed with the production mod. The 1,000-row case measures viewport work and cache reuse using repeated real references, not an entire campaign with 1,000 distinct definitions. Full-pack campaigns, other optional systems, all display scales, sustained ten-day history, and 1.6 runtime remain broader tests. No Workshop upload or release is part of these review fixes.

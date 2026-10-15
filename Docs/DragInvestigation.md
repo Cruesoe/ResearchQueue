@@ -13,7 +13,7 @@ Status: the user confirmed manual click-and-drag reordering works. The automated
 
 ## Code inspection
 
-Research Queue registers native reorder items before handling card selection, as Research Dashboard does. Its callback converts the native insertion boundary to an index after removal by subtracting one for a downward move. This agrees with the installed `Verse.ReorderableWidget.ReorderableWidgetOnGUI_AfterWindowStack`, which supplies a boundary in the original sequence and suppresses drops immediately before or after the dragged element.
+Research Queue registers native reorder items before handling card selection, as Research Dashboard does. The original callback converted the native boundary to an index after removal. The reviewed build instead maps the boundary to project identities so retained missing definitions cannot offset a drop. This agrees with the installed `Verse.ReorderableWidget.ReorderableWidgetOnGUI_AfterWindowStack`, which supplies a boundary in the original sequence and suppresses drops immediately before or after the dragged element.
 
 The native widget requires a press to establish a dragged item, movement beyond its threshold during repaint, and a release. The pure queue move implementation removes the named project and reinserts it at the requested bounded index. Inspection found no demonstrated fault in those operations.
 

@@ -61,6 +61,11 @@ namespace ResearchQueue
     [HarmonyPatch(typeof(ResearchManager), nameof(ResearchManager.FinishProject))]
     public static class Patch_ResearchManager_FinishProject
     {
+        public static void Prefix()
+        {
+            if (ResearchQueueRuntime.Enabled) ResearchQueueWorldComponent.Get()?.CaptureLegacyNodeQueue();
+        }
+
         public static void Postfix() => ResearchQueueWorldComponent.Get()?.RequestRefresh();
     }
 }

@@ -15,6 +15,7 @@ namespace ResearchQueue.State
         private int nextRateTick;
         private int nextCheckTick;
         private bool legacyNodeQueueImported;
+        private List<string> deferredNodeProjects = new List<string>();
         private bool dirty = true;
         private int revision;
         private readonly Dictionary<string, ResearchRateState> rateCache = new Dictionary<string, ResearchRateState>();
@@ -81,15 +82,22 @@ namespace ResearchQueue.State
             NodeResearchBridge.Prepare();
             foreach (string key in ResearchSystems.AllKeys()) Queue(key);
             RebuildExclusions();
-            if (!legacyNodeQueueImported)
+            CaptureLegacyNodeQueue();
+            if (deferredNodeProjects.Count > 0)
             {
-                foreach (string id in NodeResearchBridge.LegacyQueue())
+                foreach (string id in deferredNodeProjects.ToArray())
                 {
                     ResearchProjectDef? project = Resolve(id);
+                    if (project?.IsFinished == true) { deferredNodeProjects.Remove(id); continue; }
                     if (project != null && ResearchSystems.CanStart(project) && !excluded.Contains(id))
                     {
-                        List<string> order = Queue(ResearchSystems.Key(project)).ProjectIds;
-                        if (!order.Contains(id)) order.Add(id);
+                        ResearchSystemQueueState destination = Queue(ResearchSystems.Key(project));
+                        if (!destination.ProjectIds.Contains(id) && !Find.ResearchManager.IsCurrentProject(project))
+                        {
+                            destination.ProjectIds.Add(id);
+                            if (destination.Initialized && !destination.NewProjectIds.Contains(id)) destination.NewProjectIds.Add(id);
+                        }
+                        deferredNodeProjects.Remove(id);
                     }
                 }
                 legacyNodeQueueImported = true;
@@ -123,6 +131,12 @@ namespace ResearchQueue.State
                 }
             }
             revision++;
+        }
+
+        public void CaptureLegacyNodeQueue()
+        {
+            foreach (string id in NodeResearchBridge.TakeLegacyQueue())
+                if (!deferredNodeProjects.Contains(id)) deferredNodeProjects.Add(id);
         }
 
         private void RebuildExclusions()
@@ -178,6 +192,15 @@ namespace ResearchQueue.State
             revision++;
         }
 
+        public void MoveVisible(IReadOnlyList<string> visible, int from, int boundary)
+        {
+            if (from < 0 || from >= visible.Count) return;
+            ResearchProjectDef? project = Resolve(visible[from]);
+            if (project == null) return;
+            QueueRules.MoveVisible(Queue(ResearchSystems.Key(project)).ProjectIds, visible, from, boundary);
+            revision++;
+        }
+
         private ResearchRateState Rate(string id)
         {
             if (!rateCache.TryGetValue(id, out ResearchRateState? value))
@@ -230,8 +253,10 @@ namespace ResearchQueue.State
             Scribe_Collections.Look(ref rates, "researchQueueRates", LookMode.Deep);
             Scribe_Values.Look(ref nextRateTick, "researchQueueNextRateTick");
             Scribe_Values.Look(ref legacyNodeQueueImported, "researchQueueNodeImported", false);
+            Scribe_Collections.Look(ref deferredNodeProjects, "researchQueueDeferredNodeProjects", LookMode.Value);
             queues ??= new List<ResearchSystemQueueState>();
             rates ??= new List<ResearchRateState>();
+            deferredNodeProjects ??= new List<string>();
         }
     }
 }
