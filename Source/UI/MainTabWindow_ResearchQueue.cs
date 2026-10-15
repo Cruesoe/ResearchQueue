@@ -22,6 +22,7 @@ namespace ResearchQueue.UI
 
         private static readonly Texture2D SettingsIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/Settings");
         private static readonly Color DividerColor = new Color(1f, 1f, 1f, 0.2f);
+        private static readonly Color DropLineColor = new Color(1f, 0.8f, 0.2f);
 
         private readonly QuickSearchWidget search = new QuickSearchWidget();
         private readonly List<TabRecord> systemTabs = new List<TabRecord>();
@@ -366,9 +367,24 @@ namespace ResearchQueue.UI
                 if (reorderGroup >= 0 && Event.current.type == EventType.Repaint)
                     for (int i = 0; i < rows.Count; i++)
                         ReorderableWidget.Reorderable(reorderGroup, CardRect(new Rect(0f, i * RowHeight, view.width, ResearchCard.Height)));
+                if (reorderGroup >= 0 && Event.current.type == EventType.Repaint && ReorderableWidget.Dragging &&
+                    ReorderableWidget.GetDraggedIndex >= 0 && ReorderableWidget.GetDraggedFromGroupID == reorderGroup)
+                    DrawDropLine(view.width);
             }
             finally { Widgets.EndScrollView(); }
             scrollSet[System] = scroll;
+        }
+
+        // Gold drop marker over the game's faint white one, at the same gap: above the nearest card's centre lands before it.
+        private void DrawDropLine(float width)
+        {
+            float gap = RowHeight - ResearchCard.Height;
+            float mouseY = Event.current.mousePosition.y;
+            int index = Mathf.Clamp(Mathf.FloorToInt(mouseY / RowHeight), 0, rows.Count - 1);
+            bool before = mouseY < index * RowHeight + ResearchCard.Height / 2f;
+            float y = before ? index * RowHeight - gap / 2f : index * RowHeight + ResearchCard.Height + gap / 2f;
+            Rect card = CardRect(new Rect(0f, 0f, width, 0f));
+            Widgets.DrawBoxSolid(new Rect(card.x - 4f, y - 2f, card.width + 8f, 4f), DropLineColor);
         }
 
         private void OnReordered(int from, int boundary)
