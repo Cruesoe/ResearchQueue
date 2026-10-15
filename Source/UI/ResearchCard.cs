@@ -9,8 +9,9 @@ namespace ResearchQueue.UI
     public static class ResearchCard
     {
         public const float Height = 48f;
+        public const float StatusWidth = 170f;
 
-        private static readonly Color TextColor = new Color(0.95f, 0.95f, 0.95f);
+        public static readonly Color TextColor = new Color(0.95f, 0.95f, 0.95f);
         public static readonly Color TagColor = new Color(0.95f, 0.75f, 0.25f);
 
         public static Color ColorFor(ResearchProjectDef project)
@@ -37,6 +38,7 @@ namespace ResearchQueue.UI
             ? project.ProgressApparent.ToString("N0") + "/" + project.CostApparent.ToString("N0")
             : project.CostApparent.ToString("N0");
 
+        // Columns: icon | name and tag | cost | estimate or state.
         public static void Draw(Rect rect, QueueRow row, bool selected)
         {
             Color oldColor = GUI.color;
@@ -46,10 +48,11 @@ namespace ResearchQueue.UI
             Color accent = selected ? Color.Lerp(row.Color, Color.white, 0.3f) : row.Color;
             Rect icon = new Rect(rect.x + 4f, rect.y + 8f, 32f, 32f);
             float first = icon.xMax + 8f;
-            float second = rect.xMax - row.CostWidth - 9f;
+            float third = rect.xMax - StatusWidth;
+            float second = third - row.CostWidth;
             if (Event.current.type == EventType.Repaint)
             {
-                Widgets.DrawBoxSolid(rect, Color.Lerp(TexUI.AvailResearchColor, row.Color, Mouse.IsOver(rect) ? 0.4f : 0.3f));
+                Background(rect, row.Color, Mouse.IsOver(rect));
                 float progress = row.Project.ProgressPercent;
                 if (progress > 0f)
                 {
@@ -63,6 +66,7 @@ namespace ResearchQueue.UI
                 if (row.Project.UnlockedDefs.Count > 0) Widgets.DefIcon(icon, row.Project.UnlockedDefs[0]);
                 Widgets.DrawLine(new Vector2(first, rect.y), new Vector2(first, rect.yMax), accent, 1f);
                 Widgets.DrawLine(new Vector2(second, rect.y), new Vector2(second, rect.yMax), accent, 1f);
+                Widgets.DrawLine(new Vector2(third, rect.y), new Vector2(third, rect.yMax), accent, 1f);
             }
             Rect name = new Rect(first + 12f, rect.y, Mathf.Max(0f, second - first - 16f), rect.height);
             Text.WordWrap = false;
@@ -75,13 +79,28 @@ namespace ResearchQueue.UI
                 Widgets.Label(new Rect(name.x, name.y + 24f, name.width, 22f), row.Tag);
             }
             else Widgets.Label(name, row.Label);
-            GUI.color = row.Blocked ? Color.gray : Color.white;
+
             Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(new Rect(second + 4f, rect.y, row.CostWidth, rect.height), row.Cost);
+            GUI.color = row.Blocked ? Color.gray : Color.white;
+            Widgets.Label(new Rect(second, rect.y, row.CostWidth, rect.height), row.Cost);
+
+            Rect status = new Rect(third + 4f, rect.y, StatusWidth - 8f, rect.height);
+            if (row.IsNew)
+            {
+                GUI.color = TagColor;
+                Widgets.Label(new Rect(status.x, status.y + 2f, status.width, 22f), "ResearchQueue_New".Translate());
+                status = new Rect(status.x, status.y + 24f, status.width, 22f);
+            }
+            GUI.color = row.StatusWarns ? ColorLibrary.RedReadable : TextColor;
+            Widgets.Label(status, row.Status);
+
             TooltipHandler.TipRegion(rect, new TipSignal(row.Tooltip, row.Project.shortHash));
             Text.Anchor = oldAnchor;
             Text.WordWrap = oldWrap;
             GUI.color = oldColor;
         }
+
+        public static void Background(Rect rect, Color color, bool hovered) =>
+            Widgets.DrawBoxSolid(rect, Color.Lerp(TexUI.AvailResearchColor, color, hovered ? 0.4f : 0.3f));
     }
 }

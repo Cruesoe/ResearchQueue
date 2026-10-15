@@ -1,15 +1,20 @@
 using System;
+using System.Collections.Generic;
 using ResearchQueue.Research;
 using ResearchQueue.State;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace ResearchQueue.UI
 {
     // The selected project's panel: title and actions stay fixed above a scrolling description, requirements and unlocks.
     public sealed partial class MainTabWindow_ResearchQueue
     {
+        private const float RelatedHeight = 36f;
+
+        private readonly List<ResearchProjectDef> detailsLeadsTo = new List<ResearchProjectDef>();
         private Vector2 detailsScroll;
         private ResearchProjectDef? detailsProject;
         private int detailsRevision = -1;
@@ -29,6 +34,9 @@ namespace ResearchQueue.UI
                 detailsBucket = builtBucket;
                 detailsReason = Reason(project, tracker);
                 detailsCanStart = ResearchRequirements.CanStart(project);
+                detailsLeadsTo.Clear();
+                foreach (ResearchProjectDef dependent in ResearchCatalog.Dependents(project))
+                    if (!dependent.IsFinished) detailsLeadsTo.Add(dependent);
             }
 
             Text.Font = GameFont.Medium;
@@ -48,19 +56,22 @@ namespace ResearchQueue.UI
                 y = Paragraph(view.width, y, "ResearchQueue_Cost".Translate(ResearchCard.Cost(project)));
                 if (estimates.TryGetValue(project, out string? estimate))
                     y = Paragraph(view.width, y, "ResearchQueue_UnlockEstimate".Translate(estimate));
+                else if (unestimated.Contains(project))
+                    y = Paragraph(view.width, y, "ResearchQueue_UnlockEstimate".Translate("ResearchQueue_NoEstimate".Translate()) + "\n" + "ResearchQueue_NoEstimateTip".Translate());
                 if (detailsReason != null)
                 {
                     GUI.color = ColorLibrary.RedReadable;
                     y = Paragraph(view.width, y, detailsReason);
                     GUI.color = Color.white;
                 }
-                y = DrawPrerequisites(view.width, y, project);
+                y = DrawLeadsTo(view.width, y, project);
                 y = DrawUnlocks(view.width, y, project);
                 detailsHeight = y;
             }
             finally
             {
                 GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
                 Widgets.EndScrollView();
             }
         }
@@ -98,22 +109,45 @@ namespace ResearchQueue.UI
             return y + height + 10f;
         }
 
-        private static float DrawPrerequisites(float width, float y, ResearchProjectDef project)
+        // Unfinished projects this one is a prerequisite for, as small cards; clicking one selects it, switching queue or view as needed.
+        private float DrawLeadsTo(float width, float y, ResearchProjectDef selected)
         {
-            bool header = false;
-            foreach (ResearchProjectDef prerequisite in ResearchCatalog.Prerequisites(project))
+            if (detailsLeadsTo.Count == 0) return y;
+            y = Heading(width, y, "ResearchQueue_LeadsTo".Translate());
+            foreach (ResearchProjectDef project in detailsLeadsTo)
             {
-                if (!header)
+                Rect row = new Rect(0f, y, width, RelatedHeight);
+                Color color = ResearchCard.ColorFor(project);
+                if (Event.current.type == EventType.Repaint)
                 {
-                    y = Heading(width, y, "ResearchQueue_Prerequisites".Translate());
-                    header = true;
+                    ResearchCard.Background(row, color, Mouse.IsOver(row));
+                    GUI.color = color;
+                    Widgets.DrawBox(row);
+                    GUI.color = Color.white;
+                    if (project.UnlockedDefs.Count > 0) Widgets.DefIcon(new Rect(row.x + 5f, row.y + 5f, 26f, 26f), project.UnlockedDefs[0]);
                 }
-                GUI.color = prerequisite.IsFinished ? Color.green : ColorLibrary.RedReadable;
-                Widgets.Label(new Rect(6f, y, width - 6f, 24f), ResearchCard.Label(prerequisite));
-                y += 26f;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                GUI.color = ResearchCard.TextColor;
+                Widgets.Label(new Rect(row.x + 38f, row.y, row.width - 42f, row.height), ResearchCard.Label(project));
+                GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
+                TooltipHandler.TipRegion(row, new TipSignal(() => OtherPrerequisites(project, selected), project.shortHash ^ 0x5a17));
+                if (Widgets.ButtonInvisible(row, false))
+                {
+                    SoundDefOf.Click.PlayOneShotOnCamera();
+                    selectedProject = project;
+                }
+                y += RelatedHeight + 4f;
             }
-            GUI.color = Color.white;
-            return header ? y + 10f : y;
+            return y + 8f;
+        }
+
+        private static string OtherPrerequisites(ResearchProjectDef dependent, ResearchProjectDef shown)
+        {
+            List<string> others = new List<string>();
+            foreach (ResearchProjectDef prerequisite in ResearchCatalog.Prerequisites(dependent))
+                if (prerequisite != shown && !prerequisite.IsFinished) others.Add(ResearchCard.Label(prerequisite));
+            return others.Count == 0 ? "ResearchQueue_LastPrerequisite".Translate().ToString() : "ResearchQueue_AlsoRequires".Translate(string.Join(", ", others));
         }
 
         private static float DrawUnlocks(float width, float y, ResearchProjectDef project)

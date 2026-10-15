@@ -5,8 +5,8 @@
   <ResearchQueue_ConfirmDependentSnoozeTip>Before snoozing a project that other queued projects depend on, list those projects and ask for confirmation.</ResearchQueue_ConfirmDependentSnoozeTip>
   <ResearchQueue_ShowCompletionDate>Show completion dates instead of days</ResearchQueue_ShowCompletionDate>
   <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion as an in-game date instead of the number of days remaining.</ResearchQueue_ShowCompletionDateTip>
-  <ResearchQueue_EstimateFormatTip>Switch between days remaining and estimated completion dates.</ResearchQueue_EstimateFormatTip>
   <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
+  <ResearchQueue_SettingsTip>Research Queue settings</ResearchQueue_SettingsTip>
   <ResearchQueue_Standard>Standard</ResearchQueue_Standard>
   <ResearchQueue_Gravtech>Gravtech</ResearchQueue_Gravtech>
   <ResearchQueue_AnomalyCategory>Anomaly: {0}</ResearchQueue_AnomalyCategory>
@@ -14,16 +14,19 @@
   <ResearchQueue_Emergence>Emergence</ResearchQueue_Emergence>
   <ResearchQueue_Current>Current research</ResearchQueue_Current>
   <ResearchQueue_Idle>No research in this system can start right now.</ResearchQueue_Idle>
-  <ResearchQueue_Queue>Queue</ResearchQueue_Queue>
   <ResearchQueue_Snoozed>Snoozed</ResearchQueue_Snoozed>
-  <ResearchQueue_ShowingDays>Showing: days remaining</ResearchQueue_ShowingDays>
-  <ResearchQueue_ShowingDate>Showing: completion date</ResearchQueue_ShowingDate>
+  <ResearchQueue_ShowSnoozed>Show snoozed ({0})</ResearchQueue_ShowSnoozed>
+  <ResearchQueue_ShowQueue>Back to queue ({0})</ResearchQueue_ShowQueue>
+  <ResearchQueue_QueueHeader>Queue ({0})</ResearchQueue_QueueHeader>
+  <ResearchQueue_SnoozedHeader>Snoozed ({0})</ResearchQueue_SnoozedHeader>
+  <ResearchQueue_PrerequisiteSnoozed>Prerequisite snoozed</ResearchQueue_PrerequisiteSnoozed>
   <ResearchQueue_NoQueued>No queued projects match. New research is added automatically as it becomes available.</ResearchQueue_NoQueued>
   <ResearchQueue_NoSnoozed>No snoozed projects match.</ResearchQueue_NoSnoozed>
   <ResearchQueue_New>New</ResearchQueue_New>
   <ResearchQueue_Blocked>Blocked</ResearchQueue_Blocked>
-  <ResearchQueue_Unknown>Unknown</ResearchQueue_Unknown>
   <ResearchQueue_DaysEstimate>~{0} days</ResearchQueue_DaysEstimate>
+  <ResearchQueue_NoEstimate>No estimate yet</ResearchQueue_NoEstimate>
+  <ResearchQueue_NoEstimateTip>Estimates appear once research progress has been measured. Research Queue measures it every hour and averages up to the last ten days.</ResearchQueue_NoEstimateTip>
   <ResearchQueue_DateEstimate>~{0}</ResearchQueue_DateEstimate>
   <ResearchQueue_Snooze>Snooze</ResearchQueue_Snooze>
   <ResearchQueue_Restore>Restore</ResearchQueue_Restore>
@@ -32,8 +35,10 @@
   <ResearchQueue_ConfirmSnooze>Snooze {0}? These queued projects depend on it and will be removed from their queues too:</ResearchQueue_ConfirmSnooze>
   <ResearchQueue_Cost>Research points: {0}</ResearchQueue_Cost>
   <ResearchQueue_UnlockEstimate>Estimated completion: {0}</ResearchQueue_UnlockEstimate>
-  <ResearchQueue_Prerequisites>Prerequisites</ResearchQueue_Prerequisites>
   <ResearchQueue_Unlocks>Unlocks</ResearchQueue_Unlocks>
+  <ResearchQueue_LeadsTo>Leads to</ResearchQueue_LeadsTo>
+  <ResearchQueue_AlsoRequires>Also requires: {0}</ResearchQueue_AlsoRequires>
+  <ResearchQueue_LastPrerequisite>This is its last missing prerequisite.</ResearchQueue_LastPrerequisite>
   <ResearchQueue_Completed>Completed.</ResearchQueue_Completed>
   <ResearchQueue_ExplicitSnooze>Snoozed. Restore it to queue it again.</ResearchQueue_ExplicitSnooze>
   <ResearchQueue_SnoozedPrerequisite>Excluded because a prerequisite is snoozed: {0}. Restore that project to queue this one again.</ResearchQueue_SnoozedPrerequisite>
