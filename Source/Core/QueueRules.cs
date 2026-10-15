@@ -1,64 +1,50 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ResearchQueue.Core
 {
-    public sealed class QueueCandidate
-    {
-        public string Id { get; }
-        public int Era { get; }
-        public float Cost { get; }
-
-        public QueueCandidate(string id, int era, float cost)
-        {
-            Id = id;
-            Era = era;
-            Cost = cost;
-        }
-    }
-
+    // Queue operations free of game types, so the offline checks can run them.
     public static class QueueRules
     {
-        public static List<string> AppendAvailable(List<string> queue, IEnumerable<QueueCandidate> candidates,
-            ISet<string> excluded, Random random)
+        public const int MaxRateSamples = 240;
+
+        // Sorts a new batch by era, then cost, and shuffles exact ties.
+        public static void OrderBatch<T>(List<T> batch, Func<T, int> era, Func<T, float> cost, Random random)
         {
-            HashSet<string> present = new HashSet<string>(queue);
-            List<QueueCandidate> batch = candidates.Where(c => !excluded.Contains(c.Id) && present.Add(c.Id))
-                .OrderBy(c => c.Era).ThenBy(c => c.Cost).ToList();
+            batch.Sort((a, b) =>
+            {
+                int byEra = era(a).CompareTo(era(b));
+                return byEra != 0 ? byEra : cost(a).CompareTo(cost(b));
+            });
             int start = 0;
             while (start < batch.Count)
             {
                 int end = start + 1;
-                while (end < batch.Count && batch[end].Era == batch[start].Era && batch[end].Cost == batch[start].Cost)
+                while (end < batch.Count && era(batch[end]) == era(batch[start]) && cost(batch[end]) == cost(batch[start]))
                     end++;
                 for (int i = end - 1; i > start; i--)
                 {
                     int j = random.Next(start, i + 1);
-                    QueueCandidate swap = batch[i];
+                    T swap = batch[i];
                     batch[i] = batch[j];
                     batch[j] = swap;
                 }
                 start = end;
             }
-            List<string> added = batch.Select(c => c.Id).ToList();
-            queue.AddRange(added);
-            return added;
         }
 
-        public static HashSet<string> ExcludedBySnooze(IEnumerable<string> snoozed,
-            IReadOnlyDictionary<string, List<string>> prerequisites)
+        // Adds root and everything that depends on it, directly or indirectly.
+        public static void AddWithDependents<T>(HashSet<T> result, T root, Func<T, IReadOnlyList<T>> dependents)
         {
-            HashSet<string> excluded = new HashSet<string>(snoozed);
-            bool changed;
-            do
+            if (!result.Add(root)) return;
+            Stack<T> pending = new Stack<T>();
+            pending.Push(root);
+            while (pending.Count > 0)
             {
-                changed = false;
-                foreach (KeyValuePair<string, List<string>> item in prerequisites)
-                    if (!excluded.Contains(item.Key) && item.Value.Any(excluded.Contains))
-                        changed |= excluded.Add(item.Key);
-            } while (changed);
-            return excluded;
+                IReadOnlyList<T> next = dependents(pending.Pop());
+                for (int i = 0; i < next.Count; i++)
+                    if (result.Add(next[i])) pending.Push(next[i]);
+            }
         }
 
         public static void Move(List<string> queue, string id, int index)
@@ -67,6 +53,7 @@ namespace ResearchQueue.Core
             queue.Insert(Math.Max(0, Math.Min(index, queue.Count)), id);
         }
 
+        // Applies a drop from a list that skips unresolved entries; boundary is the visible index the item lands before.
         public static void MoveVisible(List<string> queue, IReadOnlyList<string> visible, int from, int boundary)
         {
             if (from < 0 || from >= visible.Count || boundary < 0 || boundary > visible.Count ||
@@ -84,24 +71,22 @@ namespace ResearchQueue.Core
         public static int EndVisibleRow(int count, float offset, float height, float pitch) =>
             Math.Max(0, Math.Min(count, (int)Math.Ceiling((Math.Max(0f, offset) + Math.Max(0f, height)) / pitch)));
 
-        public static float Average(IReadOnlyList<float> rates)
+        public static void AddSample(List<float> samples, float value)
         {
-            if (rates.Count == 0) return 0f;
+            samples.Add(Math.Max(0f, value));
+            if (samples.Count > MaxRateSamples) samples.RemoveRange(0, samples.Count - MaxRateSamples);
+        }
+
+        public static float Average(IReadOnlyList<float> samples)
+        {
+            if (samples.Count == 0) return 0f;
             float total = 0f;
-            for (int i = 0; i < rates.Count; i++) total += rates[i];
-            return total / rates.Count;
+            for (int i = 0; i < samples.Count; i++) total += samples[i];
+            return total / samples.Count;
         }
 
-        public static void AddHourlySample(List<float> rates, float progress)
-        {
-            rates.Add(Math.Max(0f, progress) * 24f);
-            if (rates.Count > 240) rates.RemoveRange(0, rates.Count - 240);
-        }
-
-        public static float CompletionDays(float remaining, float projectRate, float systemRate)
-        {
-            float rate = projectRate > 0f ? projectRate : systemRate;
-            return rate > 0f ? Math.Max(0f, remaining) / rate : -1f;
-        }
+        // Days to finish the given work at a daily rate; negative when there is no rate yet.
+        public static float CompletionDays(float work, float dailyRate) =>
+            dailyRate > 0f ? Math.Max(0f, work) / dailyRate : -1f;
     }
 }

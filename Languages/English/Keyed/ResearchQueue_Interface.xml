@@ -1,40 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <ResearchQueue_SettingsCategory>Research Queue</ResearchQueue_SettingsCategory>
+  <ResearchQueue_ConfirmDependentSnooze>Confirm snoozing when queued projects depend on it</ResearchQueue_ConfirmDependentSnooze>
+  <ResearchQueue_ConfirmDependentSnoozeTip>Before snoozing a project that other queued projects depend on, list those projects and ask for confirmation.</ResearchQueue_ConfirmDependentSnoozeTip>
+  <ResearchQueue_ShowCompletionDate>Show completion dates instead of days</ResearchQueue_ShowCompletionDate>
+  <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion as an in-game date instead of the number of days remaining.</ResearchQueue_ShowCompletionDateTip>
+  <ResearchQueue_EstimateFormatTip>Switch between days remaining and estimated completion dates.</ResearchQueue_EstimateFormatTip>
+  <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
   <ResearchQueue_Standard>Standard</ResearchQueue_Standard>
   <ResearchQueue_Gravtech>Gravtech</ResearchQueue_Gravtech>
   <ResearchQueue_AnomalyCategory>Anomaly: {0}</ResearchQueue_AnomalyCategory>
-  <ResearchQueue_Completed>Completed</ResearchQueue_Completed>
-  <ResearchQueue_Requires>Requires: {0}</ResearchQueue_Requires>
-  <ResearchQueue_TechprintsRequired>Required techprints have not been applied.</ResearchQueue_TechprintsRequired>
-  <ResearchQueue_DiscoveryRequired>This project has not been discovered.</ResearchQueue_DiscoveryRequired>
-  <ResearchQueue_StudyRequired>Anomaly study must be unlocked.</ResearchQueue_StudyRequired>
-  <ResearchQueue_EraRequired>Advance to {0} to start this research.</ResearchQueue_EraRequired>
-  <ResearchQueue_EmergenceDisabled>Emergence research is disabled in Node Research settings.</ResearchQueue_EmergenceDisabled>
-  <ResearchQueue_FoundationsRequired>Complete this era's foundation research: {0}/{1} completed.</ResearchQueue_FoundationsRequired>
-  <ResearchQueue_EraCompletionRequired>Meet Node Research's era completion requirement: {0}/{1} completed.</ResearchQueue_EraCompletionRequired>
-  <ResearchQueue_FacilitiesRequired>Required linked research facilities: {0}.</ResearchQueue_FacilitiesRequired>
-  <ResearchQueue_AnalysisRequired>Analyze the required items ({0}/{1} completed): {2}.</ResearchQueue_AnalysisRequired>
-  <ResearchQueue_OtherRequirements>Research requirements are not currently met. Check the project's research facilities, analysis, inspection, and progression requirements.</ResearchQueue_OtherRequirements>
-  <ResearchQueue_ExplicitSnooze>Snoozed by the player.</ResearchQueue_ExplicitSnooze>
-  <ResearchQueue_SnoozedDependency>Excluded by a snoozed prerequisite. Restore that prerequisite to make this project eligible again.</ResearchQueue_SnoozedDependency>
   <ResearchQueue_Foundation>Foundation</ResearchQueue_Foundation>
   <ResearchQueue_Emergence>Emergence</ResearchQueue_Emergence>
   <ResearchQueue_Current>Current research</ResearchQueue_Current>
-  <ResearchQueue_Idle>No available research can start in this system.</ResearchQueue_Idle>
+  <ResearchQueue_Idle>No research in this system can start right now.</ResearchQueue_Idle>
   <ResearchQueue_Queue>Queue</ResearchQueue_Queue>
   <ResearchQueue_Snoozed>Snoozed</ResearchQueue_Snoozed>
-  <ResearchQueue_Date>Approximate date</ResearchQueue_Date>
-  <ResearchQueue_Days>Days remaining</ResearchQueue_Days>
-  <ResearchQueue_NoSnoozed>No snoozed projects match the filter.</ResearchQueue_NoSnoozed>
-  <ResearchQueue_NoQueued>No queued projects match the filter. Newly available research will be added automatically.</ResearchQueue_NoQueued>
-  <ResearchQueue_Restore>Restore</ResearchQueue_Restore>
-  <ResearchQueue_Snooze>Snooze</ResearchQueue_Snooze>
-  <ResearchQueue_Next>Research next</ResearchQueue_Next>
-  <ResearchQueue_Blocked>Blocked</ResearchQueue_Blocked>
+  <ResearchQueue_ShowingDays>Showing: days remaining</ResearchQueue_ShowingDays>
+  <ResearchQueue_ShowingDate>Showing: completion date</ResearchQueue_ShowingDate>
+  <ResearchQueue_NoQueued>No queued projects match. New research is added automatically as it becomes available.</ResearchQueue_NoQueued>
+  <ResearchQueue_NoSnoozed>No snoozed projects match.</ResearchQueue_NoSnoozed>
   <ResearchQueue_New>New</ResearchQueue_New>
+  <ResearchQueue_Blocked>Blocked</ResearchQueue_Blocked>
   <ResearchQueue_Unknown>Unknown</ResearchQueue_Unknown>
   <ResearchQueue_DaysEstimate>~{0} days</ResearchQueue_DaysEstimate>
+  <ResearchQueue_DateEstimate>~{0}</ResearchQueue_DateEstimate>
+  <ResearchQueue_Snooze>Snooze</ResearchQueue_Snooze>
+  <ResearchQueue_Restore>Restore</ResearchQueue_Restore>
+  <ResearchQueue_Next>Research next</ResearchQueue_Next>
+  <ResearchQueue_AlreadyNext>Already next in the queue.</ResearchQueue_AlreadyNext>
+  <ResearchQueue_ConfirmSnooze>Snooze {0}? These queued projects depend on it and will be removed from their queues too:</ResearchQueue_ConfirmSnooze>
   <ResearchQueue_Cost>Research points: {0}</ResearchQueue_Cost>
   <ResearchQueue_UnlockEstimate>Estimated completion: {0}</ResearchQueue_UnlockEstimate>
-  <ResearchQueue_ConfirmSnooze>Snooze {0}? The following dependent projects will also be removed from their queues:</ResearchQueue_ConfirmSnooze>
+  <ResearchQueue_Prerequisites>Prerequisites</ResearchQueue_Prerequisites>
+  <ResearchQueue_Unlocks>Unlocks</ResearchQueue_Unlocks>
+  <ResearchQueue_Completed>Completed.</ResearchQueue_Completed>
+  <ResearchQueue_ExplicitSnooze>Snoozed. Restore it to queue it again.</ResearchQueue_ExplicitSnooze>
+  <ResearchQueue_SnoozedPrerequisite>Excluded because a prerequisite is snoozed: {0}. Restore that project to queue this one again.</ResearchQueue_SnoozedPrerequisite>
+  <ResearchQueue_Requires>Requires: {0}</ResearchQueue_Requires>
+  <ResearchQueue_FacilitiesRequired>Requires linked facilities: {0}</ResearchQueue_FacilitiesRequired>
+  <ResearchQueue_AnalysisRequired>Analyze the required items ({0}/{1}): {2}</ResearchQueue_AnalysisRequired>
+  <ResearchQueue_DiscoveryRequired>This project has not been discovered yet.</ResearchQueue_DiscoveryRequired>
+  <ResearchQueue_StudyRequired>Anomaly study must be unlocked.</ResearchQueue_StudyRequired>
+  <ResearchQueue_EraRequired>Advance to the {0} era to start this research.</ResearchQueue_EraRequired>
+  <ResearchQueue_EmergenceDisabled>Emergence research is turned off in Node Research's settings.</ResearchQueue_EmergenceDisabled>
+  <ResearchQueue_FoundationsRequired>Complete this era's foundation research: {0}/{1} done.</ResearchQueue_FoundationsRequired>
+  <ResearchQueue_EraCompletionRequired>Complete more of this era's research: {0}/{1} done.</ResearchQueue_EraCompletionRequired>
+  <ResearchQueue_OtherRequirements>Research requirements aren't met yet.</ResearchQueue_OtherRequirements>
 </LanguageData>

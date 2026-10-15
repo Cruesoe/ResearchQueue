@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LanguageData>
-  <ResearchQueue_SettingsCategory>Research Queue</ResearchQueue_SettingsCategory>
-  <ResearchQueue_DevelopmentNotice>Research Queue is under development. This skeleton does not change research selection or add a queue screen yet.</ResearchQueue_DevelopmentNotice>
-  <ResearchQueue_ConfirmDependentSnooze>Confirm snoozing when queued dependents are affected</ResearchQueue_ConfirmDependentSnooze>
-  <ResearchQueue_ConfirmDependentSnoozeTip>When snoozing would also remove dependent projects from a queue, ask for confirmation and list the affected projects.</ResearchQueue_ConfirmDependentSnoozeTip>
-</LanguageData>

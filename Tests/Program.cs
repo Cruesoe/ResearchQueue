@@ -9,64 +9,68 @@ void Check(bool condition, string name)
     if (!condition) throw new InvalidOperationException(name);
     checks++;
 }
-QueueCandidate Candidate(string id, int era, float cost) => new QueueCandidate(id, era, cost);
-List<string> queue = new List<string>();
-HashSet<string> excluded = new HashSet<string>();
-QueueRules.AppendAvailable(queue, new[] { Candidate("industrial", 4, 10), Candidate("expensive", 2, 300), Candidate("cheap", 2, 50) }, excluded, new Random(1));
-Check(queue.SequenceEqual(new[] { "cheap", "expensive", "industrial" }), "Era before total cost");
-QueueRules.Move(queue, "industrial", 0);
-QueueRules.AppendAvailable(queue, new[] { Candidate("newCheap", 1, 1), Candidate("cheap", 2, 50) }, excluded, new Random(2));
-Check(queue.SequenceEqual(new[] { "industrial", "cheap", "expensive", "newCheap" }), "Append preserves manual priorities and removes duplicates");
-string[] saved = queue.ToArray();
-QueueRules.AppendAvailable(queue, Array.Empty<QueueCandidate>(), excluded, new Random(3));
-Check(queue.SequenceEqual(saved), "Empty availability check preserves order");
-Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>
+
+List<(string Id, int Era, float Cost)> Batch(params (string, int, float)[] items) => items.ToList();
+List<string> Ids(List<(string Id, int Era, float Cost)> batch) => batch.Select(b => b.Id).ToList();
+void Order(List<(string Id, int Era, float Cost)> batch, int seed) => QueueRules.OrderBatch(batch, b => b.Era, b => b.Cost, new Random(seed));
+
+List<(string Id, int Era, float Cost)> batch = Batch(("industrial", 4, 10f), ("expensive", 2, 300f), ("cheap", 2, 50f));
+Order(batch, 1);
+Check(Ids(batch).SequenceEqual(new[] { "cheap", "expensive", "industrial" }), "Batches sort by era, then cost");
+
+List<(string Id, int Era, float Cost)> ties = Enumerable.Range(0, 20).Select(i => (i.ToString(), 2, 100f)).ToList();
+Order(ties, 8);
+Check(!Ids(ties).SequenceEqual(Enumerable.Range(0, 20).Select(i => i.ToString())), "Exact ties are shuffled");
+Check(ties.Select(t => t.Id).Distinct().Count() == 20, "Shuffling keeps every entry");
+List<(string Id, int Era, float Cost)> mixed = Batch(("b", 1, 5f), ("a", 1, 5f), ("c", 0, 9f));
+Order(mixed, 3);
+Check(mixed[0].Id == "c", "Shuffling stays within a tie group");
+
+Dictionary<string, List<string>> dependents = new Dictionary<string, List<string>>
 {
-    ["root"] = new List<string>(), ["child"] = new List<string> { "root" },
-    ["grandchild"] = new List<string> { "child" }, ["other"] = new List<string>(),
-    ["cycleA"] = new List<string> { "cycleB" }, ["cycleB"] = new List<string> { "cycleA" }
+    ["root"] = new List<string> { "child" },
+    ["child"] = new List<string> { "grandchild" },
+    ["cycleA"] = new List<string> { "cycleB" },
+    ["cycleB"] = new List<string> { "cycleA" }
 };
-HashSet<string> blocked = QueueRules.ExcludedBySnooze(new[] { "root" }, dependencies);
-Check(blocked.SetEquals(new[] { "root", "child", "grandchild" }), "Snooze removes transitive dependents across systems");
-Check(QueueRules.ExcludedBySnooze(new[] { "cycleA" }, dependencies).SetEquals(new[] { "cycleA", "cycleB" }), "Dependency cycles terminate");
-List<string> snoozedQueue = new List<string>();
-QueueRules.AppendAvailable(snoozedQueue, new[] { Candidate("root", 2, 1), Candidate("child", 2, 2), Candidate("other", 2, 3) }, blocked, new Random(1));
-Check(snoozedQueue.SequenceEqual(new[] { "other" }), "Snoozed branches do not get requeued");
-QueueRules.AppendAvailable(snoozedQueue, new[] { Candidate("root", 2, 1) }, new HashSet<string>(), new Random(1));
-Check(snoozedQueue.SequenceEqual(new[] { "other", "root" }), "Restore appends to end");
-Check(QueueRules.ExcludedBySnooze(new[] { "child" }, dependencies).Contains("grandchild"), "Independently snoozed child stays excluded after root restoration");
-List<string> ties = new List<string>();
-QueueRules.AppendAvailable(ties, Enumerable.Range(0, 20).Select(i => Candidate(i.ToString(), 2, 100)), excluded, new Random(8));
-Check(!ties.SequenceEqual(Enumerable.Range(0, 20).Select(i => i.ToString())), "Equal era/cost candidates randomize");
-Check(ties.Distinct().Count() == 20, "Tie randomization preserves all entries");
-List<float> rates = new List<float>();
-Check(QueueRules.Average(rates) == 0f, "Missing history has no rate");
-Check(QueueRules.CompletionDays(100f, 0f, 0f) == -1f, "No positive rate gives unknown estimate");
-QueueRules.AddHourlySample(rates, 10f);
-Check(QueueRules.Average(rates) == 240f, "Short available history is usable");
-QueueRules.AddHourlySample(rates, 0f);
-Check(QueueRules.Average(rates) == 120f, "Idle hours count toward average");
-Check(QueueRules.CompletionDays(240f, 0f, 120f) == 2f, "Fallback uses system rate");
-Check(QueueRules.CompletionDays(240f, 240f, 120f) == 1f, "Project-specific positive rate preferred");
-for (int i = 0; i < 240; i++) QueueRules.AddHourlySample(rates, 0f);
-Check(rates.Count == 240 && QueueRules.Average(rates) == 0f, "History rolls off after ten days");
-float first = QueueRules.CompletionDays(200f, 100f, 0f);
-float second = first + QueueRules.CompletionDays(300f, 100f, 0f);
-float third = second + QueueRules.CompletionDays(100f, 100f, 0f);
-Check(first == 2f && second == 5f && third == 6f, "Queue estimates are cumulative");
+IReadOnlyList<string> Next(string id) => dependents.TryGetValue(id, out List<string>? list) ? list : new List<string>();
+HashSet<string> excluded = new HashSet<string>();
+QueueRules.AddWithDependents(excluded, "root", Next);
+Check(excluded.SetEquals(new[] { "root", "child", "grandchild" }), "Snoozing excludes every dependent");
+HashSet<string> cycle = new HashSet<string>();
+QueueRules.AddWithDependents(cycle, "cycleA", Next);
+Check(cycle.SetEquals(new[] { "cycleA", "cycleB" }), "Dependency cycles terminate");
+
+List<string> queue = new List<string> { "A", "B", "C" };
+QueueRules.Move(queue, "C", 0);
+Check(queue.SequenceEqual(new[] { "C", "A", "B" }), "Research next moves to the front");
+QueueRules.Move(queue, "missing", 0);
+Check(queue.SequenceEqual(new[] { "C", "A", "B" }), "Moving an absent entry does nothing");
+
 List<string> recovery = new List<string> { "missing", "A", "B", "C" };
 QueueRules.MoveVisible(recovery, new[] { "A", "B", "C" }, 0, 2);
-Check(recovery.SequenceEqual(new[] { "missing", "B", "A", "C" }), "Visible drop maps around retained missing definitions");
+Check(recovery.SequenceEqual(new[] { "missing", "B", "A", "C" }), "Drops map around entries from removed mods");
 QueueRules.MoveVisible(recovery, new[] { "B", "A", "C" }, 2, 0);
-Check(recovery.SequenceEqual(new[] { "missing", "C", "B", "A" }), "Upward visible move preserves unknown names");
+Check(recovery.SequenceEqual(new[] { "missing", "C", "B", "A" }), "Upward drops keep unknown entries in place");
 QueueRules.MoveVisible(recovery, new[] { "C", "B", "A" }, 0, 3);
-Check(recovery.SequenceEqual(new[] { "missing", "B", "A", "C" }), "Drop at end retains hidden definitions");
+Check(recovery.SequenceEqual(new[] { "missing", "B", "A", "C" }), "A drop at the end lands last");
 string[] unchanged = recovery.ToArray();
 QueueRules.MoveVisible(recovery, new[] { "B", "A", "C" }, 1, 2);
-Check(recovery.SequenceEqual(unchanged), "Adjacent drop is inert");
-Check(QueueRules.FirstVisibleRow(1000, 540f, 54f) == 10 && QueueRules.EndVisibleRow(1000, 540f, 810f, 54f) == 25,
-    "Thousand-entry queue renders only fifteen full viewport rows");
-Check(QueueRules.FirstVisibleRow(0, 0f, 54f) == 0 && QueueRules.EndVisibleRow(0, 0f, 810f, 54f) == 0,
-    "Empty viewport range is safe");
-Check(QueueRules.EndVisibleRow(1000, 541f, 810f, 54f) == 26, "Partly visible final row is included");
-Console.WriteLine($"PASS: {checks} offline queue and rate checks.");
+Check(recovery.SequenceEqual(unchanged), "A drop next to itself does nothing");
+
+Check(QueueRules.FirstVisibleRow(1000, 540f, 54f) == 10 && QueueRules.EndVisibleRow(1000, 540f, 810f, 54f) == 25, "Only rows in the viewport are drawn");
+Check(QueueRules.EndVisibleRow(1000, 541f, 810f, 54f) == 26, "A partly visible last row is drawn");
+Check(QueueRules.FirstVisibleRow(0, 0f, 54f) == 0 && QueueRules.EndVisibleRow(0, 0f, 810f, 54f) == 0, "An empty list draws nothing");
+
+List<float> rates = new List<float>();
+Check(QueueRules.Average(rates) == 0f && QueueRules.CompletionDays(100f, 0f) < 0f, "No history means an unknown estimate");
+QueueRules.AddSample(rates, 240f);
+QueueRules.AddSample(rates, 0f);
+Check(QueueRules.Average(rates) == 120f, "Idle hours count toward the average");
+QueueRules.AddSample(rates, -5f);
+Check(rates.Last() == 0f, "Negative samples clamp to zero");
+for (int i = 0; i < 300; i++) QueueRules.AddSample(rates, 0f);
+Check(rates.Count == QueueRules.MaxRateSamples && QueueRules.Average(rates) == 0f, "History keeps the last ten days");
+Check(QueueRules.CompletionDays(600f, 100f) == 6f, "Cumulative work divides by the daily rate");
+
+Console.WriteLine($"PASS: {checks} offline queue checks.");

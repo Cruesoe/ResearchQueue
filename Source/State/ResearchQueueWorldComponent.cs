@@ -1,262 +1,308 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ResearchQueue.Core;
+using ResearchQueue.Research;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
 
 namespace ResearchQueue.State
 {
+    // Keeps every research system's queue current and starts its next project when the slot is free.
     public sealed class ResearchQueueWorldComponent : WorldComponent
     {
-        private List<ResearchSystemQueueState> queues = new List<ResearchSystemQueueState>();
-        private List<ResearchRateState> rates = new List<ResearchRateState>();
-        private int nextRateTick;
-        private int nextCheckTick;
-        private bool legacyNodeQueueImported;
-        private List<string> deferredNodeProjects = new List<string>();
-        private bool dirty = true;
-        private int revision;
-        private readonly Dictionary<string, ResearchRateState> rateCache = new Dictionary<string, ResearchRateState>();
-        private readonly Dictionary<string, ResearchProjectDef> definitions = new Dictionary<string, ResearchProjectDef>();
-        private readonly Dictionary<string, List<string>> dependencies = new Dictionary<string, List<string>>();
-        private HashSet<string> excluded = new HashSet<string>();
+        private const int RefreshInterval = 250;
 
-        public static ResearchQueueWorldComponent? Get() => Current.Game?.World?.GetComponent<ResearchQueueWorldComponent>();
-        public IReadOnlyList<ResearchSystemQueueState> Queues => queues;
-        public int Revision => revision;
-        public bool IsExcluded(string id) => excluded.Contains(id);
-        public void RequestRefresh() { dirty = true; }
+        private List<ResearchSystemQueueState> systems = new List<ResearchSystemQueueState>();
+        private int nextSampleTick;
+
+        private readonly List<ResearchSystemQueueState> active = new List<ResearchSystemQueueState>();
+        private readonly Dictionary<ResearchSystem, ResearchSystemQueueState> states = new Dictionary<ResearchSystem, ResearchSystemQueueState>();
+        private readonly HashSet<ResearchProjectDef> excluded = new HashSet<ResearchProjectDef>();
+        private readonly Dictionary<ResearchProjectDef, float> sampleStart = new Dictionary<ResearchProjectDef, float>();
+        private readonly HashSet<string> queuedBuffer = new HashSet<string>();
+        private readonly List<ResearchProjectDef> batchBuffer = new List<ResearchProjectDef>();
+        private int nextRefreshTick;
+        private bool dirty = true;
 
         public ResearchQueueWorldComponent(World world) : base(world) { }
+
+        public static ResearchQueueWorldComponent? Get() => Current.Game?.World?.GetComponent<ResearchQueueWorldComponent>();
+
+        // Bumped whenever a queue, snooze or rate changes, so the window knows to rebuild.
+        public int Revision { get; private set; }
+        public bool Dirty => dirty;
+        public IReadOnlyList<ResearchSystemQueueState> Active => active;
+
+        public void RequestRefresh() => dirty = true;
+        public bool IsExcluded(ResearchProjectDef project) => excluded.Contains(project);
+
+        public ResearchSystemQueueState? StateOf(ResearchProjectDef project)
+        {
+            ResearchSystem? system = ResearchCatalog.SystemOf(project);
+            return system != null && states.TryGetValue(system, out ResearchSystemQueueState? state) ? state : null;
+        }
+
+        public ResearchSystemQueueState StateOf(ResearchSystem system) => states[system];
+
+        public bool IsSnoozed(ResearchProjectDef project) => StateOf(project)?.Snoozed.Contains(project.defName) == true;
 
         public override void FinalizeInit(bool fromLoad)
         {
             base.FinalizeInit(fromLoad);
-            dirty = true;
-            foreach (ResearchProjectDef project in DefDatabase<ResearchProjectDef>.AllDefsListForReading)
+            active.Clear();
+            states.Clear();
+            foreach (ResearchSystem system in ResearchCatalog.Systems)
             {
-                definitions[project.defName] = project;
-                dependencies[project.defName] = ResearchSystems.Prerequisites(project).Select(p => p.defName).ToList();
+                ResearchSystemQueueState? state = systems.Find(s => s.SystemId == system.Id);
+                if (state == null) systems.Add(state = new ResearchSystemQueueState(system.Id));
+                state.System = system;
+                active.Add(state);
+                states[system] = state;
             }
-            foreach (ResearchRateState rate in rates) rateCache[rate.Id] = rate;
+            ImportNodeQueue();
             RebuildExclusions();
-            ResearchQueueRuntime.ApplyWindow();
+            ResetSampling();
+            dirty = true;
         }
 
         public override void WorldComponentTick()
         {
-            base.WorldComponentTick();
-            if (!ResearchQueueRuntime.Enabled || Current.ProgramState != ProgramState.Playing ||
-                Faction.OfPlayerSilentFail == null || LongEventHandler.AnyEventNowOrWaiting) return;
             int tick = Find.TickManager.TicksGame;
-            if (dirty || tick >= nextCheckTick)
-            {
-                RefreshQueues();
-                nextCheckTick = tick + 250;
-            }
-            if (tick >= nextRateTick)
+            if (dirty || tick >= nextRefreshTick) Refresh();
+            if (tick >= nextSampleTick)
             {
                 SampleRates();
-                nextRateTick = tick + GenDate.TicksPerHour;
+                nextSampleTick = tick + GenDate.TicksPerHour;
             }
         }
 
-        public ResearchProjectDef? Resolve(string id) => definitions.TryGetValue(id, out ResearchProjectDef? value) ? value : null;
-
-        public ResearchSystemQueueState Queue(string key)
-        {
-            ResearchSystemQueueState? result = queues.FirstOrDefault(q => q.SystemId == key);
-            if (result == null) { result = new ResearchSystemQueueState(key); queues.Add(result); }
-            return result;
-        }
-
-        public IEnumerable<ResearchProjectDef> Active(string key) => definitions.Values.Where(p =>
-            ResearchSystems.Key(p) == key && !p.IsFinished && Find.ResearchManager.IsCurrentProject(p));
-
-        public void RefreshQueues()
+        public void Refresh()
         {
             dirty = false;
-            ResearchQueueRuntime.ApplyWindow();
-            NodeResearchBridge.Prepare();
-            foreach (string key in ResearchSystems.AllKeys()) Queue(key);
+            nextRefreshTick = Find.TickManager.TicksGame + RefreshInterval;
+            bool changed = ImportNodeQueue();
             RebuildExclusions();
-            CaptureLegacyNodeQueue();
-            if (deferredNodeProjects.Count > 0)
-            {
-                foreach (string id in deferredNodeProjects.ToArray())
-                {
-                    ResearchProjectDef? project = Resolve(id);
-                    if (project?.IsFinished == true) { deferredNodeProjects.Remove(id); continue; }
-                    if (project != null && ResearchSystems.CanStart(project) && !excluded.Contains(id))
-                    {
-                        ResearchSystemQueueState destination = Queue(ResearchSystems.Key(project));
-                        if (!destination.ProjectIds.Contains(id) && !Find.ResearchManager.IsCurrentProject(project))
-                        {
-                            destination.ProjectIds.Add(id);
-                            if (destination.Initialized && !destination.NewProjectIds.Contains(id)) destination.NewProjectIds.Add(id);
-                        }
-                        deferredNodeProjects.Remove(id);
-                    }
-                }
-                legacyNodeQueueImported = true;
-            }
-            foreach (ResearchSystemQueueState queue in queues)
-            {
-                List<ResearchProjectDef> active = Active(queue.SystemId).ToList();
-                foreach (ResearchProjectDef blocked in active.Where(p => !ResearchSystems.CanStart(p)).ToList())
-                {
-                    Find.ResearchManager.StopProject(blocked);
-                    if (!queue.ProjectIds.Contains(blocked.defName)) queue.ProjectIds.Insert(0, blocked.defName);
-                    active.Remove(blocked);
-                }
-                // Unknown definitions retain their saved positions for recovery if the mod returns.
-                queue.ProjectIds.RemoveAll(id => Resolve(id)?.IsFinished == true || excluded.Contains(id) || active.Any(p => p.defName == id));
-                HashSet<string> unavailable = new HashSet<string>(excluded);
-                unavailable.UnionWith(active.Select(p => p.defName));
-                IEnumerable<QueueCandidate> candidates = definitions.Values.Where(p => ResearchSystems.Key(p) == queue.SystemId && ResearchSystems.CanStart(p))
-                    .Select(p => new QueueCandidate(p.defName, (int)p.techLevel, p.CostApparent));
-                List<string> added = QueueRules.AppendAvailable(queue.ProjectIds, candidates, unavailable, new Random(Rand.Int));
-                if (queue.Initialized) queue.NewProjectIds.AddRange(added.Where(id => !queue.NewProjectIds.Contains(id)));
-                queue.Initialized = true;
-                if (active.Count == 0)
-                {
-                    ResearchProjectDef? next = queue.ProjectIds.Select(Resolve).FirstOrDefault(p => p != null && ResearchSystems.CanStart(p));
-                    if (next != null)
-                    {
-                        ResearchQueueRuntime.Start(next);
-                        if (Find.ResearchManager.IsCurrentProject(next)) queue.ProjectIds.Remove(next.defName);
-                    }
-                }
-            }
-            revision++;
+            for (int i = 0; i < active.Count; i++) changed |= RefreshSystem(active[i]);
+            if (changed) Revision++;
         }
 
-        public void CaptureLegacyNodeQueue()
+        private bool RefreshSystem(ResearchSystemQueueState state)
         {
-            foreach (string id in NodeResearchBridge.TakeLegacyQueue())
-                if (!deferredNodeProjects.Contains(id)) deferredNodeProjects.Add(id);
+            ResearchSystem system = state.System!;
+            List<string> queue = state.Queue;
+            bool changed = false;
+
+            // A current project that loses a requirement goes back to the head of the queue and yields its slot.
+            ResearchProjectDef? current = system.CurrentProject();
+            if (current != null && !ResearchRequirements.CanStart(current))
+            {
+                Find.ResearchManager.StopProject(current);
+                queue.Remove(current.defName);
+                queue.Insert(0, current.defName);
+                current = null;
+                changed = true;
+            }
+
+            // Unknown defNames stay for when their mod returns; blocked entries keep their place.
+            for (int i = queue.Count - 1; i >= 0; i--)
+            {
+                ResearchProjectDef? project = Resolve(queue[i]);
+                if (project != null && (project.IsFinished || project == current || excluded.Contains(project) || ResearchCatalog.SystemOf(project) != system))
+                {
+                    queue.RemoveAt(i);
+                    changed = true;
+                }
+            }
+
+            queuedBuffer.Clear();
+            for (int i = 0; i < queue.Count; i++) queuedBuffer.Add(queue[i]);
+            batchBuffer.Clear();
+            List<ResearchProjectDef> projects = system.Projects;
+            for (int i = 0; i < projects.Count; i++)
+            {
+                ResearchProjectDef project = projects[i];
+                if (project != current && !queuedBuffer.Contains(project.defName) && !excluded.Contains(project) && ResearchRequirements.CanStart(project))
+                    batchBuffer.Add(project);
+            }
+            if (batchBuffer.Count > 0)
+            {
+                QueueRules.OrderBatch(batchBuffer, p => (int)p.techLevel, p => p.CostApparent, new Random(Rand.Int));
+                foreach (ResearchProjectDef project in batchBuffer)
+                {
+                    queue.Add(project.defName);
+                    if (state.Initialized) state.NewIds.Add(project.defName);
+                }
+                changed = true;
+            }
+            state.Initialized = true;
+
+            if (current == null)
+            {
+                for (int i = 0; i < queue.Count; i++)
+                {
+                    ResearchProjectDef? project = Resolve(queue[i]);
+                    if (project == null || !ResearchRequirements.CanStart(project)) continue;
+                    ResearchSelection.Start(project);
+                    if (Find.ResearchManager.IsCurrentProject(project))
+                    {
+                        queue.RemoveAt(i);
+                        if (!sampleStart.ContainsKey(project)) sampleStart[project] = project.ProgressReal;
+                        changed = true;
+                    }
+                    break;
+                }
+            }
+            return changed;
+        }
+
+        // Node's queue is filled only by its own window, which this mod replaces; its entries move to the front of ours.
+        private bool ImportNodeQueue()
+        {
+            List<string>? legacy = NodeResearch.TakeQueue();
+            if (legacy == null) return false;
+            for (int i = legacy.Count - 1; i >= 0; i--)
+            {
+                ResearchProjectDef? project = Resolve(legacy[i]);
+                ResearchSystemQueueState? state = project == null || project.IsFinished ? null : StateOf(project);
+                if (state == null) continue;
+                state.Queue.Remove(project!.defName);
+                state.Queue.Insert(0, project.defName);
+            }
+            return true;
         }
 
         private void RebuildExclusions()
         {
-            excluded = QueueRules.ExcludedBySnooze(queues.SelectMany(q => q.SnoozedProjectIds)
-                .Where(id => Resolve(id)?.IsFinished != true), dependencies);
-        }
-
-        public List<ResearchProjectDef> AffectedDependents(ResearchProjectDef root)
-        {
-            HashSet<string> affected = QueueRules.ExcludedBySnooze(new[] { root.defName }, dependencies);
-            HashSet<string> queued = new HashSet<string>(queues.SelectMany(q => q.ProjectIds));
-            queued.UnionWith(definitions.Values.Where(p => !p.IsFinished && Find.ResearchManager.IsCurrentProject(p)).Select(p => p.defName));
-            return definitions.Values.Where(p => p != root && affected.Contains(p.defName) && queued.Contains(p.defName)).ToList();
+            excluded.Clear();
+            foreach (ResearchSystemQueueState state in systems)
+            {
+                foreach (string id in state.Snoozed)
+                {
+                    ResearchProjectDef? project = Resolve(id);
+                    if (project != null && !project.IsFinished) QueueRules.AddWithDependents(excluded, project, ResearchCatalog.Dependents);
+                }
+            }
         }
 
         public void Snooze(ResearchProjectDef project)
         {
-            List<string> snoozed = Queue(ResearchSystems.Key(project)).SnoozedProjectIds;
-            if (!snoozed.Contains(project.defName)) snoozed.Add(project.defName);
-            HashSet<string> affected = QueueRules.ExcludedBySnooze(new[] { project.defName }, dependencies);
-            foreach (ResearchProjectDef active in definitions.Values.Where(p => !p.IsFinished &&
-                affected.Contains(p.defName) && Find.ResearchManager.IsCurrentProject(p)).ToList())
-                Find.ResearchManager.StopProject(active);
-            RefreshQueues();
+            ResearchSystemQueueState? state = StateOf(project);
+            if (state == null) return;
+            if (!state.Snoozed.Contains(project.defName)) state.Snoozed.Add(project.defName);
+            RebuildExclusions();
+            foreach (ResearchSystemQueueState other in active)
+            {
+                ResearchProjectDef? current = other.System!.CurrentProject();
+                if (current != null && excluded.Contains(current)) Find.ResearchManager.StopProject(current);
+            }
+            Refresh();
+            Revision++;
         }
 
         public void Restore(ResearchProjectDef project)
         {
-            Queue(ResearchSystems.Key(project)).SnoozedProjectIds.Remove(project.defName);
-            RefreshQueues();
+            if (StateOf(project)?.Snoozed.Remove(project.defName) != true) return;
+            Refresh();
+            Revision++;
         }
 
-        public IEnumerable<ResearchProjectDef> Snoozed(string key) => definitions.Values.Where(p =>
-            !p.IsFinished && ResearchSystems.Key(p) == key && excluded.Contains(p.defName));
-
-        public string SnoozeReason(ResearchProjectDef project)
+        // Queued or current projects that snoozing this one would also remove.
+        public List<ResearchProjectDef> QueuedDependents(ResearchProjectDef project)
         {
-            if (Queue(ResearchSystems.Key(project)).SnoozedProjectIds.Contains(project.defName))
-                return "ResearchQueue_ExplicitSnooze".Translate();
-            return "ResearchQueue_SnoozedDependency".Translate();
-        }
-
-        public void Move(ResearchProjectDef project, int index)
-        {
-            QueueRules.Move(Queue(ResearchSystems.Key(project)).ProjectIds, project.defName, index);
-            revision++;
-        }
-
-        public void ClearNewMarkers()
-        {
-            foreach (ResearchSystemQueueState queue in queues) queue.NewProjectIds.Clear();
-            revision++;
-        }
-
-        public void MoveVisible(IReadOnlyList<string> visible, int from, int boundary)
-        {
-            if (from < 0 || from >= visible.Count) return;
-            ResearchProjectDef? project = Resolve(visible[from]);
-            if (project == null) return;
-            QueueRules.MoveVisible(Queue(ResearchSystems.Key(project)).ProjectIds, visible, from, boundary);
-            revision++;
-        }
-
-        private ResearchRateState Rate(string id)
-        {
-            if (!rateCache.TryGetValue(id, out ResearchRateState? value))
-            { value = new ResearchRateState(id); rates.Add(value); rateCache[id] = value; }
-            return value;
-        }
-
-        private void SampleRates()
-        {
-            Dictionary<string, float> totals = queues.ToDictionary(q => q.SystemId, q => 0f);
-            foreach (ResearchProjectDef project in definitions.Values)
+            HashSet<ResearchProjectDef> affected = new HashSet<ResearchProjectDef>();
+            QueueRules.AddWithDependents(affected, project, ResearchCatalog.Dependents);
+            List<ResearchProjectDef> result = new List<ResearchProjectDef>();
+            foreach (ResearchProjectDef dependent in affected)
             {
-                ResearchRateState rate = Rate(project.defName);
-                float progress = Math.Min(project.ProgressReal, project.Cost);
-                float delta = rate.LastRealProgress >= 0f ? Math.Max(0f, progress - rate.LastRealProgress) : 0f;
-                delta *= project.CostFactor(Faction.OfPlayer.def.techLevel);
-                if (rate.Rates.Count > 0 || delta > 0f || Find.ResearchManager.IsCurrentProject(project))
-                    QueueRules.AddHourlySample(rate.Rates, delta);
-                rate.LastRealProgress = progress;
-                string key = ResearchSystems.Key(project);
-                if (totals.ContainsKey(key)) totals[key] += delta;
-            }
-            foreach (KeyValuePair<string, float> total in totals)
-                QueueRules.AddHourlySample(Rate("System:" + total.Key).Rates, total.Value);
-            revision++;
-        }
-
-        public Dictionary<string, float> Estimates(string key)
-        {
-            Dictionary<string, float> result = new Dictionary<string, float>();
-            float cumulative = 0f;
-            float average = QueueRules.Average(Rate("System:" + key).Rates);
-            IEnumerable<ResearchProjectDef?> ordered = Active(key).Cast<ResearchProjectDef?>().Concat(Queue(key).ProjectIds.Select(Resolve));
-            foreach (ResearchProjectDef? project in ordered)
-            {
-                if (project == null) continue;
-                if (!ResearchSystems.CanStart(project)) { result[project.defName] = -1f; continue; }
-                float duration = QueueRules.CompletionDays(project.CostApparent - project.ProgressApparent,
-                    QueueRules.Average(Rate(project.defName).Rates), average);
-                cumulative = duration < 0f || cumulative < 0f ? -1f : cumulative + duration;
-                result[project.defName] = cumulative;
+                if (dependent == project || dependent.IsFinished) continue;
+                ResearchSystemQueueState? state = StateOf(dependent);
+                if (state != null && (state.Queue.Contains(dependent.defName) || state.System!.CurrentProject() == dependent))
+                    result.Add(dependent);
             }
             return result;
         }
 
+        // Explicitly snoozed projects that exclude this one through its prerequisites.
+        public List<ResearchProjectDef> SnoozedPrerequisites(ResearchProjectDef project)
+        {
+            List<ResearchProjectDef> result = new List<ResearchProjectDef>();
+            HashSet<ResearchProjectDef> seen = new HashSet<ResearchProjectDef>();
+            Stack<ResearchProjectDef> pending = new Stack<ResearchProjectDef>();
+            pending.Push(project);
+            while (pending.Count > 0)
+            {
+                foreach (ResearchProjectDef prerequisite in ResearchCatalog.Prerequisites(pending.Pop()))
+                {
+                    if (!seen.Add(prerequisite) || prerequisite.IsFinished) continue;
+                    if (IsSnoozed(prerequisite)) result.Add(prerequisite);
+                    pending.Push(prerequisite);
+                }
+            }
+            return result;
+        }
+
+        public void MoveToFront(ResearchProjectDef project)
+        {
+            ResearchSystemQueueState? state = StateOf(project);
+            if (state == null) return;
+            QueueRules.Move(state.Queue, project.defName, 0);
+            Revision++;
+        }
+
+        public void MoveVisible(ResearchSystemQueueState state, IReadOnlyList<string> visible, int from, int boundary)
+        {
+            QueueRules.MoveVisible(state.Queue, visible, from, boundary);
+            Revision++;
+        }
+
+        public void ClearNewMarkers()
+        {
+            bool any = false;
+            foreach (ResearchSystemQueueState state in systems)
+            {
+                any |= state.NewIds.Count > 0;
+                state.NewIds.Clear();
+            }
+            if (any) Revision++;
+        }
+
+        // Apparent progress tracks research work regardless of the project's era, so one rate serves the whole system.
+        private void SampleRates()
+        {
+            for (int i = 0; i < active.Count; i++) active[i].SampledProgress = 0f;
+            TechLevel level = Faction.OfPlayer.def.techLevel;
+            foreach (KeyValuePair<ResearchProjectDef, float> start in sampleStart)
+            {
+                ResearchSystemQueueState? state = StateOf(start.Key);
+                if (state == null) continue;
+                float progress = Math.Min(start.Key.ProgressReal, start.Key.Cost);
+                state.SampledProgress += Math.Max(0f, progress - start.Value) * start.Key.CostFactor(level);
+            }
+            for (int i = 0; i < active.Count; i++)
+                QueueRules.AddSample(active[i].Rates, active[i].SampledProgress * GenDate.HoursPerDay);
+            ResetSampling();
+            Revision++;
+        }
+
+        private void ResetSampling()
+        {
+            sampleStart.Clear();
+            for (int i = 0; i < active.Count; i++)
+            {
+                ResearchProjectDef? current = active[i].System!.CurrentProject();
+                if (current != null) sampleStart[current] = current.ProgressReal;
+            }
+        }
+
+        private static ResearchProjectDef? Resolve(string id) => DefDatabase<ResearchProjectDef>.GetNamedSilentFail(id);
+
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref queues, "researchQueueSystems", LookMode.Deep);
-            Scribe_Collections.Look(ref rates, "researchQueueRates", LookMode.Deep);
-            Scribe_Values.Look(ref nextRateTick, "researchQueueNextRateTick");
-            Scribe_Values.Look(ref legacyNodeQueueImported, "researchQueueNodeImported", false);
-            Scribe_Collections.Look(ref deferredNodeProjects, "researchQueueDeferredNodeProjects", LookMode.Value);
-            queues ??= new List<ResearchSystemQueueState>();
-            rates ??= new List<ResearchRateState>();
-            deferredNodeProjects ??= new List<string>();
+            Scribe_Collections.Look(ref systems, "researchQueueSystems", LookMode.Deep);
+            Scribe_Values.Look(ref nextSampleTick, "researchQueueNextRateTick");
+            systems ??= new List<ResearchSystemQueueState>();
         }
     }
 }
