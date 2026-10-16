@@ -25,20 +25,31 @@ namespace ResearchQueue.UI
         public static readonly Texture2D? NodeIcon = NodeWindowType != null ? ContentFinder<Texture2D>.Get("UI/ResearchQueue/NodeResearch") : null;
         public static readonly Texture2D QueueIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/ResearchQueue");
 
+        // One window of each kind for the session, reopened each time so each tree keeps its scroll, zoom and tab.
+        private static MainTabWindow_Research? vanillaWindow;
+        private static MainTabWindow? nodeWindow;
+
         public static void OpenVanilla(Window current)
         {
             current.Close(false);
             NodeRestoreTabs?.Invoke(null, null);
-            Find.WindowStack.Add(new MainTabWindow_Research { def = MainButtonDefOf.Research });
-            SoundDefOf.TabOpen.PlayOneShotOnCamera();
+            vanillaWindow ??= new MainTabWindow_Research { def = MainButtonDefOf.Research };
+            Show(vanillaWindow);
         }
 
         public static void OpenNode(Window current)
         {
-            if (NodeWindowType == null || !(Activator.CreateInstance(NodeWindowType) is MainTabWindow node)) return;
+            if (NodeWindowType == null) return;
+            nodeWindow ??= Activator.CreateInstance(NodeWindowType) as MainTabWindow;
+            if (nodeWindow == null) return;
             current.Close(false);
-            node.def = MainButtonDefOf.Research;
-            Find.WindowStack.Add(node);
+            nodeWindow.def = MainButtonDefOf.Research;
+            Show(nodeWindow);
+        }
+
+        private static void Show(Window window)
+        {
+            if (!Find.WindowStack.IsOpen(window)) Find.WindowStack.Add(window);
             SoundDefOf.TabOpen.PlayOneShotOnCamera();
         }
 

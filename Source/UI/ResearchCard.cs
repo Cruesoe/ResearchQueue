@@ -114,7 +114,7 @@ namespace ResearchQueue.UI
             Color oldColor = GUI.color;
             TextAnchor oldAnchor = Text.Anchor;
             bool hidden = ResearchCatalog.Masked(project);
-            Color color = CardColor(project);
+            Color color = hidden ? TexUI.HiddenResearchColor : ColorFor(project);
             if (Event.current.type == EventType.Repaint)
             {
                 Background(rect, color, highlight && !hidden && Mouse.IsOver(rect));

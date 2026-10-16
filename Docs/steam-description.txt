@@ -20,7 +20,7 @@ I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=372
 
 [h2]Compatibility[/h2]
 [list]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3729878405]Node Research[/url]: compatible. Its era, foundation and emergence rules are followed, foundation and emergence projects are tagged on their cards, and its research queue is taken over when you add this mod.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3729878405]Node Research[/url]: compatible. Its era, foundation and emergence rules are followed, foundation and emergence projects are tagged on their cards, its "Hide research from future tech levels" setting hides those projects here too, and its research queue is taken over when you add this mod. Its tree no longer opens after every finished project, since the queue starts the next one itself.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3609835606]Vanilla Gravship Expanded - Chapter 1[/url]: compatible. Gravtech research gets its own queue.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3778002533]Semi Random Research:P-Fork Continued[/url]: not compatible, because it also chooses what to research.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3715276023]Research: Auto[/url]: not compatible, because it also chooses what to research.

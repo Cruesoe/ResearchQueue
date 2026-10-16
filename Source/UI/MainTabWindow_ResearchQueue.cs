@@ -369,7 +369,9 @@ namespace ResearchQueue.UI
             if (Prefs.DevMode && currentRow != null)
             {
                 Rect finish = new Rect(row.xMax - 140f, left.y + (ColumnTitleHeight - 28f) / 2f, 140f, 28f);
-                if (Widgets.ButtonText(finish, "ResearchQueue_DevFinish".Translate())) Find.ResearchManager.FinishProject(currentRow.Project);
+                // Read at the click: the row can be a rebuild behind the slot.
+                if (Widgets.ButtonText(finish, "ResearchQueue_DevFinish".Translate()) && System.CurrentProject() is ResearchProjectDef current)
+                    Find.ResearchManager.FinishProject(current);
             }
             if (currentRow != null) DrawRow(row, currentRow, tracker);
             else

@@ -12,12 +12,12 @@ namespace ResearchQueue.Patches
     // Adds a Research Queue button to Node Research's graph controls, after its vanilla-menu button.
     // Patched by hand because Node's window type exists only when Node Research is loaded.
     [StaticConstructorOnStartup]
-    public static class Patch_NodeResearch_DrawGraphControls
+    public static class Patch_MainTabWindow_BetterResearch_DrawGraphControls
     {
         private const float ButtonSize = 24f;
         private const float ButtonGap = 8f;
 
-        static Patch_NodeResearch_DrawGraphControls()
+        static Patch_MainTabWindow_BetterResearch_DrawGraphControls()
         {
             if (ResearchScreens.NodeWindowType == null) return;
             MethodInfo? original = AccessTools.Method(ResearchScreens.NodeWindowType, "DrawGraphControls");
@@ -29,8 +29,8 @@ namespace ResearchQueue.Patches
             try
             {
                 new Harmony("cruesoe.researchqueue.noderesearch").Patch(original,
-                    transpiler: new HarmonyMethod(typeof(Patch_NodeResearch_DrawGraphControls), nameof(Transpiler)),
-                    postfix: new HarmonyMethod(typeof(Patch_NodeResearch_DrawGraphControls), nameof(Postfix)));
+                    transpiler: new HarmonyMethod(typeof(Patch_MainTabWindow_BetterResearch_DrawGraphControls), nameof(Transpiler)),
+                    postfix: new HarmonyMethod(typeof(Patch_MainTabWindow_BetterResearch_DrawGraphControls), nameof(Postfix)));
             }
             catch (Exception e)
             {

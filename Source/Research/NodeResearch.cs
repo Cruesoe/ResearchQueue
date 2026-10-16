@@ -20,6 +20,9 @@ namespace ResearchQueue.Research
         private static FieldInfo? emergenceEnabled;
         private static FieldInfo? advancementMode;
         private static FieldInfo? hideFutureEras;
+        private static FieldInfo? autoOpenOnFinish;
+        private static int hideFutureErasFrame = -1;
+        private static bool hideFutureErasCached;
         private static MethodInfo? advancementProgress;
 
         private static void Resolve()
@@ -36,6 +39,7 @@ namespace ResearchQueue.Research
                 emergenceEnabled = AccessTools.Field(settings, "enableEmergence");
                 advancementMode = AccessTools.Field(settings, "advancementTiedTo");
                 hideFutureEras = AccessTools.Field(settings, "restrictViewingFutureTechLevels");
+                autoOpenOnFinish = AccessTools.Field(settings, "autoOpenMenuOnFinish");
             }
             advancementProgress = AccessTools.Method(AccessTools.TypeByName("BetterResearchMenu.MainTabWindow_BetterResearch"), "GetAdvancementProgressRaw");
         }
@@ -52,13 +56,37 @@ namespace ResearchQueue.Research
         }
 
         // Node's "Hide research from future tech levels": as in its tree, projects above the colony's tech level.
+        // The setting is read once per frame, since every masked card asks.
         public static bool HidesFutureEra(ResearchProjectDef project)
         {
             if (!Active) return false;
-            Resolve();
+            if (hideFutureErasFrame != Time.frameCount)
+            {
+                hideFutureErasFrame = Time.frameCount;
+                Resolve();
+                object? settings = settingsField?.GetValue(null);
+                hideFutureErasCached = settings != null && hideFutureEras?.GetValue(settings) is true;
+            }
             Faction? player = Faction.OfPlayerSilentFail;
+            return hideFutureErasCached && player != null && project.techLevel > player.def.techLevel;
+        }
+
+        // Node opens the Research tab after each finished project when "auto open menu on finish" is on; the queue already
+        // starts the next project, so the setting is switched off around FinishProject. Returns the value to put back.
+        public static bool? SuppressAutoOpen()
+        {
+            if (!Active) return null;
+            Resolve();
             object? settings = settingsField?.GetValue(null);
-            return player != null && settings != null && hideFutureEras?.GetValue(settings) is true && project.techLevel > player.def.techLevel;
+            if (settings == null || !(autoOpenOnFinish?.GetValue(settings) is bool value) || !value) return null;
+            autoOpenOnFinish.SetValue(settings, false);
+            return value;
+        }
+
+        public static void RestoreAutoOpen(bool? value)
+        {
+            object? settings = settingsField?.GetValue(null);
+            if (value != null && settings != null) autoOpenOnFinish?.SetValue(settings, value.Value);
         }
 
         public static string Tag(ResearchProjectDef project)
