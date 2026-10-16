@@ -492,7 +492,10 @@ namespace ResearchQueue.UI
             {
                 options.Add(new FloatMenuOption("ResearchQueue_Snooze".Translate(), () => ConfirmSnooze(project, tracker)));
                 if (row.Position > 0)
+                {
                     options.Add(new FloatMenuOption("ResearchQueue_MoveToTop".Translate(), row.Position > 1 && !row.Blocked ? () => tracker.MoveToFront(project) : (Action?)null));
+                    options.Add(new FloatMenuOption("ResearchQueue_ResearchNow".Translate(), !row.Blocked ? () => tracker.ResearchNow(project) : (Action?)null));
+                }
             }
             Find.WindowStack.Add(new FloatMenu(options));
         }

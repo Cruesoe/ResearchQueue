@@ -42,6 +42,8 @@
   <ResearchQueue_MoveToTop>Move to top</ResearchQueue_MoveToTop>
   <ResearchQueue_MoveToTopTip>Move this project to the top of the queue, so it starts as soon as the current research finishes.</ResearchQueue_MoveToTopTip>
   <ResearchQueue_AlreadyTop>Already at the top of the queue.</ResearchQueue_AlreadyTop>
+  <ResearchQueue_ResearchNow>Research now</ResearchQueue_ResearchNow>
+  <ResearchQueue_ResearchNowTip>Start this project now. The current project keeps its progress and goes back to the top of the queue.</ResearchQueue_ResearchNowTip>
   <ResearchQueue_ConfirmSnoozeTitle>Snooze {0}?</ResearchQueue_ConfirmSnoozeTitle>
   <ResearchQueue_ConfirmSnooze>These projects depend on it and will also be blocked until you restore it:</ResearchQueue_ConfirmSnooze>
   <ResearchQueue_QueuedCardHint>Drag to change its place in the queue. Right-click for more options.</ResearchQueue_QueuedCardHint>

@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Drawing
 [IO.Directory]::CreateDirectory($OutputDirectory) | Out-Null
 
 # Draw on a 24-unit grid at high resolution, then downsample to transparent UI textures.
-foreach ($name in 'MoveToTop', 'Snooze', 'Restore', 'VanillaTree', 'NodeResearch', 'ResearchQueue') {
+foreach ($name in 'MoveToTop', 'ResearchNow', 'Snooze', 'Restore', 'VanillaTree', 'NodeResearch', 'ResearchQueue') {
     $canvas = [Drawing.Bitmap]::new(768, 768)
     $graphics = [Drawing.Graphics]::FromImage($canvas)
     $graphics.Clear([Drawing.Color]::Transparent)
@@ -27,6 +27,13 @@ foreach ($name in 'MoveToTop', 'Snooze', 'Restore', 'VanillaTree', 'NodeResearch
                 [Drawing.PointF]::new(10.5, 12),
                 [Drawing.PointF]::new(6, 16.5),
                 [Drawing.PointF]::new(4, 14.5)))
+            $graphics.FillPath([Drawing.Brushes]::White, $path)
+        } elseif ($name -eq 'ResearchNow') {
+            # A play triangle: start this project now.
+            $path.AddPolygon([Drawing.PointF[]]@(
+                [Drawing.PointF]::new(5, 2.5),
+                [Drawing.PointF]::new(21, 12),
+                [Drawing.PointF]::new(5, 21.5)))
             $graphics.FillPath([Drawing.Brushes]::White, $path)
         } elseif ($name -eq 'Restore') {
             # An undo arrow: a thick ring segment with a solid head on its upper end, pointing along the curve.

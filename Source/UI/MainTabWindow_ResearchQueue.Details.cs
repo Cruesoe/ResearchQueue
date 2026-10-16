@@ -14,8 +14,9 @@ namespace ResearchQueue.UI
     {
         private const float PanelPadding = 12f;
         private const float ActionIconSize = 24f;
-        private const float ActionsWidth = 60f;
+        private const float ActionsWidth = 96f;
 
+        private static readonly Texture2D ResearchNowIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/ResearchNow");
         private static readonly Texture2D MoveToTopIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/MoveToTop");
         private static readonly Texture2D SnoozeIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/Snooze");
         private static readonly Texture2D RestoreIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/Restore");
@@ -212,7 +213,7 @@ namespace ResearchQueue.UI
             }
         }
 
-        // Small icon buttons right of the title, listed right to left: Snooze then Move to top, or Restore for an excluded project.
+        // Small icon buttons right of the title, listed right to left: Snooze, Move to top, Research now; or Restore for an excluded project.
         private void BuildActions(ResearchProjectDef project, ResearchQueueWorldComponent tracker)
         {
             detailsActions.Clear();
@@ -232,6 +233,12 @@ namespace ResearchQueue.UI
             else if (index < 0 || !detailsCanStart) nextReason = detailsReason ?? "ResearchQueue_OtherRequirements".Translate();
             detailsActions.Add(new DetailsAction(MoveToTopIcon, "ResearchQueue_MoveToTop".Translate(), "ResearchQueue_MoveToTopTip".Translate(),
                 nextReason == null, nextReason, () => tracker.MoveToFront(project)));
+            string? nowReason = null;
+            if (project.IsFinished) nowReason = "ResearchQueue_Completed".Translate();
+            else if (Find.ResearchManager.IsCurrentProject(project)) nowReason = "InProgress".Translate();
+            else if (!detailsCanStart) nowReason = detailsReason ?? "ResearchQueue_OtherRequirements".Translate();
+            detailsActions.Add(new DetailsAction(ResearchNowIcon, "ResearchQueue_ResearchNow".Translate(), "ResearchQueue_ResearchNowTip".Translate(),
+                nowReason == null, nowReason, () => tracker.ResearchNow(project)));
         }
 
         // White like the settings cog, highlighting on hover. Disabled: faint and inert.

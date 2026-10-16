@@ -242,6 +242,30 @@ namespace ResearchQueue.State
             return result;
         }
 
+        // Starts the project at once; the project it replaces keeps its progress and goes to the top of the queue.
+        public void ResearchNow(ResearchProjectDef project)
+        {
+            ResearchSystemQueueState? state = StateOf(project);
+            if (state == null || !ResearchRequirements.CanStart(project) || Find.ResearchManager.IsCurrentProject(project)) return;
+            ResearchProjectDef? current = state.System!.CurrentProject();
+            if (current != null) Find.ResearchManager.StopProject(current);
+            ResearchSelection.Start(project);
+            if (!Find.ResearchManager.IsCurrentProject(project))
+            {
+                // The game refused the switch: put the old project back so the slot isn't left empty.
+                if (current != null) ResearchSelection.Start(current);
+                return;
+            }
+            state.Queue.Remove(project.defName);
+            if (current != null)
+            {
+                state.Queue.Remove(current.defName);
+                state.Queue.Insert(0, current.defName);
+            }
+            if (!sampleStart.ContainsKey(project)) sampleStart[project] = project.ProgressReal;
+            Revision++;
+        }
+
         public void MoveToFront(ResearchProjectDef project)
         {
             ResearchSystemQueueState? state = StateOf(project);
