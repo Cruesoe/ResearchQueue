@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Drawing
 [IO.Directory]::CreateDirectory($OutputDirectory) | Out-Null
 
 # Draw on a 24-unit grid at high resolution, then downsample to transparent UI textures.
-foreach ($name in 'MoveToTop', 'Snooze', 'Restore', 'VanillaTree', 'ResearchQueue') {
+foreach ($name in 'MoveToTop', 'Snooze', 'Restore', 'VanillaTree', 'NodeResearch', 'ResearchQueue') {
     $canvas = [Drawing.Bitmap]::new(768, 768)
     $graphics = [Drawing.Graphics]::FromImage($canvas)
     $graphics.Clear([Drawing.Color]::Transparent)
@@ -56,6 +56,21 @@ foreach ($name in 'MoveToTop', 'Snooze', 'Restore', 'VanillaTree', 'ResearchQueu
             $graphics.FillRectangle($white, 3.5, 11, 17, 2)
             foreach ($x in 3.5, 11, 18.5) { $graphics.FillRectangle($white, $x, 13, 2, 3) }
             foreach ($x in 1.5, 9, 16.5) { $graphics.FillRectangle($white, $x, 16, 6, 5) }
+        } elseif ($name -eq 'NodeResearch') {
+            # A node graph: three linked nodes, for switching to Node Research's tree.
+            $nodes = @(@(6, 6.5), @(18.5, 9), @(10, 18.5))
+            foreach ($link in @(@(0, 1), @(1, 2), @(2, 0))) {
+                $a = $nodes[$link[0]]; $b = $nodes[$link[1]]
+                $lx = $b[0] - $a[0]; $ly = $b[1] - $a[1]; $len = [Math]::Sqrt($lx * $lx + $ly * $ly)
+                $nx = -$ly / $len * 1.1; $ny = $lx / $len * 1.1
+                # Each shape is filled on its own: overlapping shapes in one path would cut holes where they cross.
+                $graphics.FillPolygon([Drawing.Brushes]::White, [Drawing.PointF[]]@(
+                    [Drawing.PointF]::new($a[0] + $nx, $a[1] + $ny),
+                    [Drawing.PointF]::new($b[0] + $nx, $b[1] + $ny),
+                    [Drawing.PointF]::new($b[0] - $nx, $b[1] - $ny),
+                    [Drawing.PointF]::new($a[0] - $nx, $a[1] - $ny)))
+            }
+            foreach ($node in $nodes) { $graphics.FillEllipse([Drawing.Brushes]::White, $node[0] - 3.5, $node[1] - 3.5, 7, 7) }
         } elseif ($name -eq 'ResearchQueue') {
             # A queue: three bulleted rows, for returning to Research Queue.
             $white = [Drawing.Brushes]::White

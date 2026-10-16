@@ -310,7 +310,7 @@ namespace ResearchQueue.UI
 
         // As vanilla: the name or anything it unlocks; undiscovered projects never match.
         private bool Matches(ResearchProjectDef project) =>
-            !search.filter.Active || (!project.IsHidden && (search.filter.Matches(ResearchCatalog.Label(project)) || project.UnlockedDefs.Any(MatchesUnlock)));
+            !search.filter.Active || (!ResearchCatalog.Masked(project) && (search.filter.Matches(ResearchCatalog.Label(project)) || project.UnlockedDefs.Any(MatchesUnlock)));
 
         private bool MatchesUnlock(Def unlock) => search.filter.Active && search.filter.Matches(unlock.label);
 
@@ -337,7 +337,7 @@ namespace ResearchQueue.UI
 
         private string Tooltip(ResearchProjectDef project)
         {
-            if (project.IsHidden) return ResearchCatalog.ProjectLabel(project);
+            if (ResearchCatalog.Masked(project)) return ResearchCatalog.ProjectLabel(project);
             string text = ResearchCatalog.Label(project);
             if (!project.description.NullOrEmpty()) text += "\n\n" + project.description;
             ResearchQueueWorldComponent? tracker = ResearchQueueWorldComponent.Get();

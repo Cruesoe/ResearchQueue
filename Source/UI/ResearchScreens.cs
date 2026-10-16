@@ -15,19 +15,15 @@ namespace ResearchQueue.UI
     public static class ResearchScreens
     {
         private const string NodeWindowTypeName = "BetterResearchMenu.MainTabWindow_BetterResearch";
-        // Node Research's own icons, present only when it is loaded.
-        private const string NodeTreeIconPath = "UI/TreeToggle";
-        private const string NodeLogoIconPath = "UI/TechLevels/AllTab";
 
         public static readonly Type? NodeWindowType = NodeResearch.Active ? AccessTools.TypeByName(NodeWindowTypeName) : null;
         // Node collapses every project onto its own tab; Restore puts the vanilla tabs back, as its own vanilla button does.
         private static readonly MethodInfo? NodeRestoreTabs = NodeResearch.Active ? AccessTools.Method("BetterResearchMenu.Startup:Restore") : null;
 
-        public static readonly Texture2D VanillaIcon = LoadNodeIcon(NodeTreeIconPath) ?? ContentFinder<Texture2D>.Get("UI/ResearchQueue/VanillaTree");
-        public static readonly Texture2D? NodeIcon = NodeWindowType != null ? LoadNodeIcon(NodeLogoIconPath) : null;
+        public static readonly Texture2D VanillaIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/VanillaTree");
+        // Null without Node Research, which hides its button.
+        public static readonly Texture2D? NodeIcon = NodeWindowType != null ? ContentFinder<Texture2D>.Get("UI/ResearchQueue/NodeResearch") : null;
         public static readonly Texture2D QueueIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/ResearchQueue");
-
-        private static Texture2D? LoadNodeIcon(string path) => NodeResearch.Active ? ContentFinder<Texture2D>.Get(path, false) : null;
 
         public static void OpenVanilla(Window current)
         {

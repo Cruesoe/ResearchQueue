@@ -269,7 +269,7 @@ namespace ResearchQueue.UI
                 Rect row = new Rect(0f, y, width, ResearchCard.Height);
                 ResearchCard.DrawCompact(row, project, true);
                 y += row.height;
-                if (project.IsHidden) continue;
+                if (ResearchCatalog.Masked(project)) continue;
                 TooltipHandler.TipRegion(row, new TipSignal(() => OtherPrerequisites(project, selected), project.shortHash ^ 0x5a17));
                 if (Widgets.ButtonInvisible(row, false))
                 {

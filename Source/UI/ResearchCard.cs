@@ -36,7 +36,7 @@ namespace ResearchQueue.UI
         }
 
         // Undiscovered Anomaly projects use vanilla's hidden research color.
-        public static Color CardColor(ResearchProjectDef project) => project.IsHidden ? TexUI.HiddenResearchColor : ColorFor(project);
+        public static Color CardColor(ResearchProjectDef project) => ResearchCatalog.Masked(project) ? TexUI.HiddenResearchColor : ColorFor(project);
 
         public static string Cost(ResearchProjectDef project) => project.ProgressApparent > 0f
             ? project.ProgressApparent.ToString("N0") + "/" + project.CostApparent.ToString("N0")
@@ -113,7 +113,7 @@ namespace ResearchQueue.UI
         {
             Color oldColor = GUI.color;
             TextAnchor oldAnchor = Text.Anchor;
-            bool hidden = project.IsHidden;
+            bool hidden = ResearchCatalog.Masked(project);
             Color color = CardColor(project);
             if (Event.current.type == EventType.Repaint)
             {

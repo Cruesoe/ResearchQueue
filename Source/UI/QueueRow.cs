@@ -30,7 +30,7 @@ namespace ResearchQueue.UI
             Position = position;
             Blocked = blocked;
             IsNew = isNew;
-            Hidden = project.IsHidden;
+            Hidden = ResearchCatalog.Masked(project);
             Status = status;
             StatusWarns = statusWarns;
             Tooltip = tooltip;

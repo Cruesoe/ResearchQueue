@@ -19,6 +19,7 @@ namespace ResearchQueue.Research
         private static FieldInfo? restrictEra;
         private static FieldInfo? emergenceEnabled;
         private static FieldInfo? advancementMode;
+        private static FieldInfo? hideFutureEras;
         private static MethodInfo? advancementProgress;
 
         private static void Resolve()
@@ -34,6 +35,7 @@ namespace ResearchQueue.Research
                 restrictEra = AccessTools.Field(settings, "restrictResearchToTechLevel");
                 emergenceEnabled = AccessTools.Field(settings, "enableEmergence");
                 advancementMode = AccessTools.Field(settings, "advancementTiedTo");
+                hideFutureEras = AccessTools.Field(settings, "restrictViewingFutureTechLevels");
             }
             advancementProgress = AccessTools.Method(AccessTools.TypeByName("BetterResearchMenu.MainTabWindow_BetterResearch"), "GetAdvancementProgressRaw");
         }
@@ -47,6 +49,16 @@ namespace ResearchQueue.Research
             List<string> taken = new List<string>(queue);
             queue.Clear();
             return taken;
+        }
+
+        // Node's "Hide research from future tech levels": as in its tree, projects above the colony's tech level.
+        public static bool HidesFutureEra(ResearchProjectDef project)
+        {
+            if (!Active) return false;
+            Resolve();
+            Faction? player = Faction.OfPlayerSilentFail;
+            object? settings = settingsField?.GetValue(null);
+            return player != null && settings != null && hideFutureEras?.GetValue(settings) is true && project.techLevel > player.def.techLevel;
         }
 
         public static string Tag(ResearchProjectDef project)

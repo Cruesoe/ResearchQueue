@@ -45,9 +45,12 @@ namespace ResearchQueue.Research
 
         public static string Label(Def def) => def.label.NullOrEmpty() ? def.defName : def.LabelCap.ToString();
 
-        // Undiscovered Anomaly projects are masked as vanilla does: "(Unknown research)".
+        // Shown but unnamed: undiscovered Anomaly projects, and future-era ones while Node Research hides those.
+        public static bool Masked(ResearchProjectDef project) => project.IsHidden || NodeResearch.HidesFutureEra(project);
+
+        // Masked projects are labeled as vanilla labels undiscovered ones: "(Unknown research)".
         public static string ProjectLabel(ResearchProjectDef project) =>
-            project.IsHidden ? "(" + "UnknownResearch".Translate() + ")" : Label(project);
+            Masked(project) ? "(" + "UnknownResearch".Translate() + ")" : Label(project);
 
         // Era, then cost: the queue's order, for lists of related projects.
         public static int ByEra(ResearchProjectDef a, ResearchProjectDef b) =>
