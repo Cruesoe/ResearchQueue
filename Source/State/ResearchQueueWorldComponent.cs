@@ -11,7 +11,10 @@ namespace ResearchQueue.State
     // Keeps every research system's queue current and starts its next project when the slot is free.
     public sealed class ResearchQueueWorldComponent : WorldComponent
     {
-        private const int RefreshInterval = 250;
+        // Finishing, snoozing and restoring refresh at once; polling only catches other unlocks (benches, techprints, eras).
+        // Hourly while standard research runs, faster while its slot is empty so new unlocks start promptly.
+        private const int BusyRefreshInterval = GenDate.TicksPerHour;
+        private const int IdleRefreshInterval = 250;
 
         private List<ResearchSystemQueueState> systems = new List<ResearchSystemQueueState>();
         private int nextSampleTick;
@@ -80,11 +83,12 @@ namespace ResearchQueue.State
         public void Refresh()
         {
             dirty = false;
-            nextRefreshTick = Find.TickManager.TicksGame + RefreshInterval;
             bool changed = ImportNodeQueue();
             RebuildExclusions();
             for (int i = 0; i < active.Count; i++) changed |= RefreshSystem(active[i]);
             if (changed) Revision++;
+            bool idle = ResearchCatalog.Standard.CurrentProject() == null;
+            nextRefreshTick = Find.TickManager.TicksGame + (idle ? IdleRefreshInterval : BusyRefreshInterval);
         }
 
         private bool RefreshSystem(ResearchSystemQueueState state)

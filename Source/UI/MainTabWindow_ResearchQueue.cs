@@ -68,6 +68,8 @@ namespace ResearchQueue.UI
         public override void PreOpen()
         {
             base.PreOpen();
+            // Polling is hourly while research runs, so opening the tab refreshes to show anything unlocked since.
+            ResearchQueueWorldComponent.Get()?.RequestRefresh();
             search.Reset();
             showingSnoozed = false;
             rebuild = true;
