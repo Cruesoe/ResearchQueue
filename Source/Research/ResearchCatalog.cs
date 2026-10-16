@@ -43,6 +43,20 @@ namespace ResearchQueue.Research
             return tags.TryGetValue(project, out string? tag) ? tag : string.Empty;
         }
 
+        public static string Label(Def def) => def.label.NullOrEmpty() ? def.defName : def.LabelCap.ToString();
+
+        // Undiscovered Anomaly projects are masked as vanilla does: "(Unknown research)".
+        public static string ProjectLabel(ResearchProjectDef project) =>
+            project.IsHidden ? "(" + "UnknownResearch".Translate() + ")" : Label(project);
+
+        // Era, then cost: the queue's order, for lists of related projects.
+        public static int ByEra(ResearchProjectDef a, ResearchProjectDef b) =>
+            a.techLevel != b.techLevel ? a.techLevel.CompareTo(b.techLevel) : a.CostApparent.CompareTo(b.CostApparent);
+
+        // As vanilla's research tab: projects the difficulty settings hide are left out, unless already being researched.
+        public static bool Allowed(ResearchProjectDef project) =>
+            Find.Storyteller.difficulty.AllowedBy(project.hideWhen) || Find.ResearchManager.IsCurrentProject(project);
+
         public static IEnumerable<ResearchProjectDef> Prerequisites(ResearchProjectDef project)
         {
             if (project.prerequisites != null)

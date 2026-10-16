@@ -10,6 +10,7 @@
   <ResearchQueue_Standard>Standard</ResearchQueue_Standard>
   <ResearchQueue_Gravtech>Gravtech</ResearchQueue_Gravtech>
   <ResearchQueue_AnomalyCategory>Anomaly: {0}</ResearchQueue_AnomalyCategory>
+  <ResearchQueue_TabCount>{0} ({1})</ResearchQueue_TabCount>
   <ResearchQueue_Foundation>Foundation</ResearchQueue_Foundation>
   <ResearchQueue_Emergence>Emergence</ResearchQueue_Emergence>
   <ResearchQueue_Current>Current research</ResearchQueue_Current>
@@ -18,6 +19,7 @@
   <ResearchQueue_ShowSnoozed>Show snoozed ({0})</ResearchQueue_ShowSnoozed>
   <ResearchQueue_ShowQueue>Back to queue ({0})</ResearchQueue_ShowQueue>
   <ResearchQueue_QueueHeader>Queue ({0})</ResearchQueue_QueueHeader>
+  <ResearchQueue_QueueHeaderTotal>Queue ({0}), ~{1} to finish</ResearchQueue_QueueHeaderTotal>
   <ResearchQueue_SnoozedHeader>Snoozed ({0})</ResearchQueue_SnoozedHeader>
   <ResearchQueue_PrerequisiteSnoozed>Prerequisite snoozed</ResearchQueue_PrerequisiteSnoozed>
   <ResearchQueue_NoQueued>No queued projects match. New research is added automatically as it becomes available.</ResearchQueue_NoQueued>
@@ -28,16 +30,24 @@
   <ResearchQueue_NoEstimate>No estimate yet</ResearchQueue_NoEstimate>
   <ResearchQueue_NoEstimateTip>Estimates appear once research progress has been measured. Research Queue measures it every hour and averages up to the last ten days.</ResearchQueue_NoEstimateTip>
   <ResearchQueue_DateEstimate>~{0}</ResearchQueue_DateEstimate>
+  <ResearchQueue_ShowSnoozedTip>Show the projects you have snoozed, and those they block, so you can restore them.</ResearchQueue_ShowSnoozedTip>
+  <ResearchQueue_ShowQueueTip>Go back to the research queue.</ResearchQueue_ShowQueueTip>
   <ResearchQueue_Snooze>Snooze</ResearchQueue_Snooze>
+  <ResearchQueue_SnoozeTip>Take this project out of the queue until you restore it. Research that depends on it is set aside too.</ResearchQueue_SnoozeTip>
   <ResearchQueue_Restore>Restore</ResearchQueue_Restore>
-  <ResearchQueue_Next>Research next</ResearchQueue_Next>
-  <ResearchQueue_AlreadyNext>Already next in the queue.</ResearchQueue_AlreadyNext>
+  <ResearchQueue_RestoreTip>Put this project back in the queue, along with the research it was blocking.</ResearchQueue_RestoreTip>
+  <ResearchQueue_MoveToTop>Move to top</ResearchQueue_MoveToTop>
+  <ResearchQueue_MoveToTopTip>Move this project to the top of the queue, so it starts as soon as the current research finishes.</ResearchQueue_MoveToTopTip>
+  <ResearchQueue_AlreadyTop>Already at the top of the queue.</ResearchQueue_AlreadyTop>
   <ResearchQueue_ConfirmSnoozeTitle>Snooze {0}?</ResearchQueue_ConfirmSnoozeTitle>
   <ResearchQueue_ConfirmSnooze>These projects depend on it and will also be blocked until you restore it:</ResearchQueue_ConfirmSnooze>
-  <ResearchQueue_Cost>Research points: {0}</ResearchQueue_Cost>
-  <ResearchQueue_UnlockEstimate>Estimated completion: {0}</ResearchQueue_UnlockEstimate>
+  <ResearchQueue_QueuedCardHint>Drag to change its place in the queue. Right-click for more options.</ResearchQueue_QueuedCardHint>
+  <ResearchQueue_CardHint>Right-click for more options.</ResearchQueue_CardHint>
+  <ResearchQueue_InfoCost>{0} research points</ResearchQueue_InfoCost>
   <ResearchQueue_Unlocks>Unlocks</ResearchQueue_Unlocks>
+  <ResearchQueue_UnlocksNone>This project doesn't unlock anything directly.</ResearchQueue_UnlocksNone>
   <ResearchQueue_LeadsTo>Leads to</ResearchQueue_LeadsTo>
+  <ResearchQueue_LeadsToNone>No unfinished research depends on this project.</ResearchQueue_LeadsToNone>
   <ResearchQueue_AlsoRequires>Also requires: {0}</ResearchQueue_AlsoRequires>
   <ResearchQueue_LastPrerequisite>This is its last missing prerequisite.</ResearchQueue_LastPrerequisite>
   <ResearchQueue_Completed>Completed.</ResearchQueue_Completed>

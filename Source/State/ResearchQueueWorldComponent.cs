@@ -214,8 +214,8 @@ namespace ResearchQueue.State
             QueueRules.AddWithDependents(affected, project, ResearchCatalog.Dependents);
             List<ResearchProjectDef> result = new List<ResearchProjectDef>();
             foreach (ResearchProjectDef dependent in affected)
-                if (dependent != project && !dependent.IsFinished && !excluded.Contains(dependent)) result.Add(dependent);
-            result.Sort(UI.ResearchCard.ByEra);
+                if (dependent != project && !dependent.IsFinished && !excluded.Contains(dependent) && ResearchCatalog.Allowed(dependent)) result.Add(dependent);
+            result.Sort(ResearchCatalog.ByEra);
             return result;
         }
 

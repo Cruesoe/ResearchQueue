@@ -6,14 +6,14 @@ I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=372
 
 [h2]Features[/h2]
 [list]
-[*]Every project you can start joins the queue automatically, cheapest era first, and new research is added as soon as it becomes available.
-[*]Drag cards to change priorities, or use Research next to send a project straight to the front.
+[*]Every project you can start joins the queue automatically, earliest era first and cheapest first within each era, and new research is added as soon as it becomes available.
+[*]Drag cards to change priorities, or use Move to top to send a project straight to the front.
 [*]Snooze projects you don't want this playthrough; anything that depends on them is set aside too until you restore them.
 [*]Before a snooze, a confirmation lists every project it would block.
 [*]Each card shows its cost and an estimated completion, measured from your colony's actual research speed.
 [*]Blocked projects keep their place in the queue and say what they are waiting for.
 [*]The details panel shows a project's description, what it unlocks and what it leads to, with the other prerequisites each of those still needs.
-[*]Search filters the queue and the snoozed list by name.
+[*]Search filters the queue and the snoozed list by name or by anything a project unlocks.
 [*]Standard research, each Anomaly knowledge category and Gravtech have separate queues, since each has its own research slot.
 [/list]
 

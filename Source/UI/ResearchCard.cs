@@ -11,6 +11,8 @@ namespace ResearchQueue.UI
     {
         public const float Height = 48f;
         public const float StatusWidth = 170f;
+        // Scroll bar width plus a gap, so content never touches the bar.
+        public const float ScrollReserve = 24f;
 
         public static readonly Color TextColor = new Color(0.95f, 0.95f, 0.95f);
         public static readonly Color TagColor = new Color(0.95f, 0.75f, 0.25f);
@@ -33,7 +35,8 @@ namespace ResearchQueue.UI
             }
         }
 
-        public static string Label(Def def) => def.label.NullOrEmpty() ? def.defName : def.LabelCap.ToString();
+        // Undiscovered Anomaly projects use vanilla's hidden research color.
+        public static Color CardColor(ResearchProjectDef project) => project.IsHidden ? TexUI.HiddenResearchColor : ColorFor(project);
 
         public static string Cost(ResearchProjectDef project) => project.ProgressApparent > 0f
             ? project.ProgressApparent.ToString("N0") + "/" + project.CostApparent.ToString("N0")
@@ -64,7 +67,7 @@ namespace ResearchQueue.UI
                 GUI.color = accent;
                 Widgets.DrawBox(rect, selected ? 2 : 1);
                 GUI.color = Color.white;
-                if (row.Project.UnlockedDefs.Count > 0) Widgets.DefIcon(icon, row.Project.UnlockedDefs[0]);
+                if (!row.Hidden) Icon(icon, row.Project);
                 Widgets.DrawLine(new Vector2(first, rect.y), new Vector2(first, rect.yMax), accent, 1f);
                 Widgets.DrawLine(new Vector2(second, rect.y), new Vector2(second, rect.yMax), accent, 1f);
                 Widgets.DrawLine(new Vector2(third, rect.y), new Vector2(third, rect.yMax), accent, 1f);
@@ -101,10 +104,6 @@ namespace ResearchQueue.UI
             GUI.color = oldColor;
         }
 
-        // Era, then cost: the queue's order, for lists of related projects.
-        public static int ByEra(ResearchProjectDef a, ResearchProjectDef b) =>
-            a.techLevel != b.techLevel ? a.techLevel.CompareTo(b.techLevel) : a.CostApparent.CompareTo(b.CostApparent);
-
         // Space above card i of an era-sorted list: wider where a new era starts.
         public static float GapBefore(IReadOnlyList<ResearchProjectDef> projects, int i) =>
             projects[i].techLevel != projects[i - 1].techLevel ? 14f : 4f;
@@ -114,29 +113,65 @@ namespace ResearchQueue.UI
         {
             Color oldColor = GUI.color;
             TextAnchor oldAnchor = Text.Anchor;
-            Color color = ColorFor(project);
+            bool hidden = project.IsHidden;
+            Color color = CardColor(project);
             if (Event.current.type == EventType.Repaint)
             {
-                Background(rect, color, highlight && Mouse.IsOver(rect));
+                Background(rect, color, highlight && !hidden && Mouse.IsOver(rect));
                 GUI.color = color;
                 Widgets.DrawBox(rect);
                 GUI.color = Color.white;
-                if (project.UnlockedDefs.Count > 0) Widgets.DefIcon(new Rect(rect.x + 6f, rect.center.y - 16f, 32f, 32f), project.UnlockedDefs[0]);
+                if (!hidden) Icon(new Rect(rect.x + 6f, rect.center.y - 16f, 32f, 32f), project);
             }
             Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = TextColor;
+            GUI.color = hidden ? Color.gray : TextColor;
             Rect label = new Rect(rect.x + 46f, rect.y, rect.width - 50f, rect.height);
-            string tag = ResearchCatalog.Tag(project);
+            string tag = hidden ? string.Empty : ResearchCatalog.Tag(project);
             if (tag.Length > 0)
             {
-                Widgets.Label(new Rect(label.x, label.y + 2f, label.width, 22f), Label(project));
+                Widgets.Label(new Rect(label.x, label.y + 2f, label.width, 22f), ResearchCatalog.Label(project));
                 GUI.color = TagColor;
                 Widgets.Label(new Rect(label.x, label.y + 24f, label.width, 22f), tag);
             }
-            else Widgets.Label(label, Label(project));
+            else Widgets.Label(label, ResearchCatalog.ProjectLabel(project));
             Text.Anchor = oldAnchor;
             GUI.color = oldColor;
         }
+
+        // First unlock that has an icon; failing that, a Node Research emergence project's era icon; otherwise empty.
+        // The chosen unlock is cached per project; null means none has an icon.
+        private static void Icon(Rect rect, ResearchProjectDef project)
+        {
+            if (!iconDefs.TryGetValue(project, out Def? iconDef))
+            {
+                iconDef = null;
+                foreach (Def unlock in project.UnlockedDefs)
+                    if (HasIcon(unlock))
+                    {
+                        iconDef = unlock;
+                        break;
+                    }
+                iconDefs[project] = iconDef;
+            }
+            if (iconDef != null)
+            {
+                Widgets.DefIcon(rect, iconDef);
+                return;
+            }
+            Texture2D? era = NodeResearch.EmergenceIcon(project);
+            if (era != null) GUI.DrawTexture(rect, era, ScaleMode.ScaleToFit);
+        }
+
+        private static readonly Dictionary<ResearchProjectDef, Def?> iconDefs = new Dictionary<ResearchProjectDef, Def?>();
+
+        // The def types Widgets.DefIcon draws an icon for.
+        private static bool HasIcon(Def def) => def switch
+        {
+            ThingDef or PawnKindDef => true,
+            RecipeDef recipe => recipe.UIIconThing != null || recipe.UIIcon != null,
+            TerrainDef terrain => terrain.uiIcon != null,
+            _ => false,
+        };
 
         public static void Background(Rect rect, Color color, bool hovered) =>
             Widgets.DrawBoxSolid(rect, Color.Lerp(TexUI.AvailResearchColor, color, hovered ? 0.4f : 0.3f));

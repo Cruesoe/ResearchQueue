@@ -1,4 +1,5 @@
 using System;
+using ResearchQueue.Research;
 using UnityEngine;
 using Verse;
 
@@ -11,6 +12,8 @@ namespace ResearchQueue.UI
         public int Position { get; }
         public bool Blocked { get; }
         public bool IsNew { get; }
+        // Undiscovered Anomaly project: drawn masked and can't be selected.
+        public bool Hidden { get; }
         // Estimate, or a short state such as Blocked; shown in the card's last column.
         public string Status { get; }
         public bool StatusWarns { get; }
@@ -27,14 +30,15 @@ namespace ResearchQueue.UI
             Position = position;
             Blocked = blocked;
             IsNew = isNew;
+            Hidden = project.IsHidden;
             Status = status;
             StatusWarns = statusWarns;
             Tooltip = tooltip;
-            Label = ResearchCard.Label(project);
-            Tag = Research.ResearchCatalog.Tag(project);
+            Label = ResearchCatalog.ProjectLabel(project);
+            Tag = Hidden ? string.Empty : ResearchCatalog.Tag(project);
             Cost = ResearchCard.Cost(project);
             CostWidth = Mathf.Max(65f, Text.CalcSize(Cost).x + 12f);
-            Color = ResearchCard.ColorFor(project);
+            Color = ResearchCard.CardColor(project);
         }
     }
 }

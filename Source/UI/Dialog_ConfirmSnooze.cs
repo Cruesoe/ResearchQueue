@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RimWorld;
+using ResearchQueue.Research;
 using UnityEngine;
 using Verse;
 
@@ -58,7 +59,7 @@ namespace ResearchQueue.UI
         {
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleHeight), "ResearchQueue_ConfirmSnoozeTitle".Translate(ResearchCard.Label(project)));
+            Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleHeight), "ResearchQueue_ConfirmSnoozeTitle".Translate(ResearchCatalog.Label(project)));
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
             float y = inRect.y + TitleHeight + 4f;
@@ -68,7 +69,7 @@ namespace ResearchQueue.UI
 
             Rect outRect = new Rect(inRect.x, y, inRect.width, inRect.yMax - ButtonHeight - 14f - y);
             bool scrolls = listHeight > outRect.height;
-            Rect view = new Rect(0f, 0f, outRect.width - (scrolls ? 16f : 0f), listHeight);
+            Rect view = new Rect(0f, 0f, outRect.width - (scrolls ? ResearchCard.ScrollReserve : 0f), listHeight);
             Widgets.BeginScrollView(outRect, ref scroll, view);
             for (int i = 0; i < blocked.Count; i++)
                 ResearchCard.DrawCompact(new Rect(0f, cardY[i], view.width, ResearchCard.Height), blocked[i], false);

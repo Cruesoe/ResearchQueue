@@ -1,4 +1,4 @@
-# Checks run by Deploy-Mod before deploying: offline queue checks, translation keys, keyed XML whitespace, no tiny fonts, metadata.
+# Checks run by Deploy-Mod before deploying: offline queue checks, translation keys, keyed XML whitespace, textures, no tiny fonts, metadata.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $failures = New-Object System.Collections.Generic.List[string]
@@ -24,6 +24,12 @@ foreach ($file in Get-ChildItem (Join-Path $root 'Languages\English\Keyed') -Fil
 }
 foreach ($key in $used) { if (-not $keyed.Contains($key)) { $failures.Add("Missing translation: $key") } }
 foreach ($key in $keyed) { if (-not $used.Contains($key)) { $failures.Add("Unused translation: $key") } }
+
+# Every complete texture path the code loads must exist under Textures (paths built at runtime, such as Node Research's, are skipped).
+foreach ($m in [regex]::Matches($sourceText, 'ContentFinder<Texture2D>\.Get\("([^"]+)"\s*[,)]')) {
+    $texture = Join-Path $root ('Textures\' + $m.Groups[1].Value.Replace('/', '\') + '.png')
+    if (-not (Test-Path $texture)) { $failures.Add("Missing texture: $($m.Groups[1].Value)") }
+}
 
 if ($sourceText -match 'GameFont\.Tiny') { $failures.Add('GameFont.Tiny is used') }
 if ($sourceText -match 'GUI\.enabled') { $failures.Add('GUI.enabled is used; grey out with the active argument instead') }

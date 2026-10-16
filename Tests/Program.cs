@@ -43,7 +43,7 @@ Check(cycle.SetEquals(new[] { "cycleA", "cycleB" }), "Dependency cycles terminat
 
 List<string> queue = new List<string> { "A", "B", "C" };
 QueueRules.Move(queue, "C", 0);
-Check(queue.SequenceEqual(new[] { "C", "A", "B" }), "Research next moves to the front");
+Check(queue.SequenceEqual(new[] { "C", "A", "B" }), "Move to top moves to the front");
 QueueRules.Move(queue, "missing", 0);
 Check(queue.SequenceEqual(new[] { "C", "A", "B" }), "Moving an absent entry does nothing");
 

@@ -20,7 +20,7 @@ namespace ResearchQueue.Research
             if (node != null) reasons.Add(node);
             List<ResearchProjectDef> missing = ResearchCatalog.Prerequisites(project).Where(p => !p.IsFinished).ToList();
             if (missing.Count > 0)
-                reasons.Add("ResearchQueue_Requires".Translate(string.Join(", ", missing.Select(p => p.LabelCap.ToString()))));
+                reasons.Add("ResearchQueue_Requires".Translate(string.Join(", ", missing.Select(ResearchCatalog.ProjectLabel))));
             if (!project.TechprintRequirementMet)
                 reasons.Add("InsufficientTechprintsApplied".Translate(project.TechprintsApplied, project.TechprintCount));
             if (project.requiredResearchBuilding != null && !project.PlayerHasAnyAppropriateResearchBench)

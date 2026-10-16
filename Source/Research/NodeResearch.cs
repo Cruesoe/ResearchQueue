@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace ResearchQueue.Research
@@ -54,6 +55,26 @@ namespace ResearchQueue.Research
             if (ResearchCatalog.HasExtension(project, "ResearchFoundationExtension")) return "ResearchQueue_Foundation".Translate();
             if (ResearchCatalog.HasExtension(project, "EmergenceExtension")) return "ResearchQueue_Emergence".Translate();
             return string.Empty;
+        }
+
+        private static readonly Dictionary<ResearchProjectDef, Texture2D?> emergenceIcons = new Dictionary<ResearchProjectDef, Texture2D?>();
+
+        // Node's own era icon (UI/TechLevels/<level>) for the era an emergence project leads to; null for other projects.
+        public static Texture2D? EmergenceIcon(ResearchProjectDef project)
+        {
+            if (!Active) return null;
+            if (emergenceIcons.TryGetValue(project, out Texture2D? cached)) return cached;
+            Texture2D? icon = null;
+            if (project.modExtensions != null)
+                foreach (DefModExtension extension in project.modExtensions)
+                {
+                    if (extension.GetType().Name != "EmergenceExtension") continue;
+                    if (AccessTools.Field(extension.GetType(), "targetLevel")?.GetValue(extension) is TechLevel target)
+                        icon = ContentFinder<Texture2D>.Get("UI/TechLevels/" + target, false);
+                    break;
+                }
+            emergenceIcons[project] = icon;
+            return icon;
         }
 
         // Explains Node's era, emergence and advancement gates, which it applies through its CanStartNow patch.

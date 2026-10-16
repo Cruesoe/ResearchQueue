@@ -18,9 +18,16 @@ namespace ResearchQueue.UI
         private const float RowHeight = 54f;
         private const float NumberWidth = 44f;
         private const float HeaderHeight = 26f;
+        private const float ColumnTitleHeight = 36f;
+        private const float ColumnContentTop = 42f;
+        private const float ColumnGap = 20f;
+        private const float DetailsWidth = 380f;
+        private const float LeadsToWidth = 360f;
+        private const float MinQueueWidth = 620f;
         private const float RefreshTicks = 250;
         private static readonly Texture2D SettingsIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/Settings");
-        private static readonly Color DividerColor = new Color(1f, 1f, 1f, 0.2f);
+        // Vanilla's menu section border color (private in Widgets), so dividers match the details panel's frame.
+        private static readonly Color DividerColor = new ColorInt(135, 135, 135).ToColor;
         private static readonly Color DropLineColor = new Color(1f, 0.8f, 0.2f);
 
         private readonly QuickSearchWidget search = new QuickSearchWidget();
@@ -36,6 +43,7 @@ namespace ResearchQueue.UI
         private ResearchSystemQueueState? state;
         private QueueRow? currentRow;
         private int queuedCount;
+        private string? queueTotal;
         private int snoozedCount;
         private bool showingSnoozed;
         private bool rebuild = true;
@@ -55,7 +63,7 @@ namespace ResearchQueue.UI
         private ResearchSystem System => system ??= ResearchCatalog.Standard;
 
         protected override float Margin => 12f;
-        public override Vector2 RequestedTabSize => new Vector2(1200f, Verse.UI.screenHeight - 35f);
+        public override Vector2 RequestedTabSize => new Vector2(1520f, Verse.UI.screenHeight - 35f);
 
         public override void PreOpen()
         {
@@ -94,12 +102,17 @@ namespace ResearchQueue.UI
             RebuildIfNeeded(tracker);
             DrawToolbar(new Rect(content.x, content.y, content.width, 30f));
 
-            float detailsWidth = Mathf.Clamp(content.width * 0.33f, 270f, 400f);
-            Rect left = new Rect(content.x, content.y + 42f, content.width - detailsWidth - 20f, content.height - 42f);
-            Rect right = new Rect(left.xMax + 20f, left.y, detailsWidth, left.height);
+            // Queue | details; the details split into Unlocks and Leads to side by side when there is room, otherwise stack.
+            float top = content.y + 42f, height = content.height - 42f;
+            bool split = content.width - DetailsWidth - LeadsToWidth - ColumnGap * 2f >= MinQueueWidth;
+            float detailsWidth = split ? DetailsWidth + ColumnGap + LeadsToWidth : Mathf.Clamp(content.width * 0.33f, 270f, 400f);
+            Rect left = new Rect(content.x, top, content.width - detailsWidth - ColumnGap, height);
+            // The details panel starts at the line under Current research, level with the queue.
+            float panelTop = top + ColumnContentTop + ResearchCard.Height + 14f;
+            Rect details = new Rect(left.xMax + ColumnGap, panelTop, detailsWidth, left.yMax - panelTop);
             float y = DrawCurrent(left, tracker);
             DrawQueue(new Rect(left.x, y, left.width, left.yMax - y), tracker);
-            DrawDetails(right, tracker);
+            DrawDetails(details, tracker, split);
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
@@ -120,6 +133,8 @@ namespace ResearchQueue.UI
                 showingSnoozed = tracker.IsExcluded(selectedProject!);
                 scrollToSelection = true;
                 detailsScroll = Vector2.zero;
+                leadsToScroll = Vector2.zero;
+                descriptionScroll = Vector2.zero;
                 rebuild = true;
             }
             else if (CurTab != syncedTab)
@@ -155,6 +170,8 @@ namespace ResearchQueue.UI
             selectedProject = project;
             syncedSelection = project;
             detailsScroll = Vector2.zero;
+            leadsToScroll = Vector2.zero;
+            descriptionScroll = Vector2.zero;
             detailsProject = null;
         }
 
@@ -165,8 +182,24 @@ namespace ResearchQueue.UI
                 systemTabs.Clear();
                 foreach (ResearchSystem candidate in ResearchCatalog.Systems)
                     systemTabs.Add(new TabRecord(candidate.Label, () => SelectSystem(candidate), () => System == candidate));
+                ResearchQueueWorldComponent? tracker = ResearchQueueWorldComponent.Get();
+                if (tracker != null) UpdateTabLabels(tracker);
             }
             TabDrawer.DrawTabs(content, systemTabs);
+        }
+
+        // Each tab counts its current and queued projects, and greys out when it has none.
+        private void UpdateTabLabels(ResearchQueueWorldComponent tracker)
+        {
+            for (int i = 0; i < systemTabs.Count && i < ResearchCatalog.Systems.Count; i++)
+            {
+                ResearchSystem candidate = ResearchCatalog.Systems[i];
+                int count = candidate.CurrentProject() != null ? 1 : 0;
+                foreach (string id in tracker.StateOf(candidate).Queue)
+                    if (DefDatabase<ResearchProjectDef>.GetNamedSilentFail(id) != null) count++;
+                systemTabs[i].label = "ResearchQueue_TabCount".Translate(candidate.Label, count);
+                systemTabs[i].labelColor = count == 0 ? Color.gray : (Color?)null;
+            }
         }
 
         private void DrawToolbar(Rect rect)
@@ -176,6 +209,7 @@ namespace ResearchQueue.UI
             Rect toggle = new Rect(rect.x + searchWidth + 12f, rect.y, 180f, 30f);
             string label = showingSnoozed ? "ResearchQueue_ShowQueue".Translate(queuedCount) : "ResearchQueue_ShowSnoozed".Translate(snoozedCount);
             if (Widgets.ButtonText(toggle, label)) SetSnoozedView(!showingSnoozed);
+            TooltipHandler.TipRegion(toggle, (showingSnoozed ? "ResearchQueue_ShowQueueTip" : "ResearchQueue_ShowSnoozedTip").Translate());
 
             Rect cog = new Rect(rect.xMax - 28f, rect.y + 1f, 28f, 28f);
             if (Widgets.ButtonImage(cog, SettingsIcon, Color.white, GenUI.MouseoverColor, true, "ResearchQueue_SettingsTip".Translate()))
@@ -201,6 +235,7 @@ namespace ResearchQueue.UI
             builtRevision = tracker.Revision;
             builtBucket = bucket;
             builtShowDates = ResearchQueueMod.Settings.ShowCompletionDate;
+            UpdateTabLabels(tracker);
             rows.Clear();
             rowIds.Clear();
             estimates.Clear();
@@ -224,7 +259,7 @@ namespace ResearchQueue.UI
             string prerequisiteLabel = "ResearchQueue_PrerequisiteSnoozed".Translate();
             foreach (ResearchProjectDef project in System.Projects)
             {
-                if (project.IsFinished || !tracker.IsExcluded(project)) continue;
+                if (project.IsFinished || !tracker.IsExcluded(project) || !ResearchCatalog.Allowed(project)) continue;
                 snoozedCount++;
                 if (showingSnoozed && Matches(project))
                     rows.Add(MakeRow(project, 0, false, tracker.IsSnoozed(project) ? snoozedLabel : prerequisiteLabel, false));
@@ -250,14 +285,24 @@ namespace ResearchQueue.UI
                 rows.Add(MakeRow(project, queuedCount, blocked, status, blocked));
                 rowIds.Add(id);
             }
+
+            // Time to finish the current project and every startable queued one at the measured rate.
+            float totalDays = QueueRules.CompletionDays(work, rate);
+            queueTotal = totalDays > 0f && totalDays < 30000f ? ((int)(totalDays * GenDate.TicksPerDay)).ToStringTicksToPeriod(allowSeconds: false) : null;
+            search.noResultsMatched = search.filter.Active && rows.Count == 0;
         }
 
         private bool SettingsChanged() => builtShowDates != ResearchQueueMod.Settings.ShowCompletionDate;
 
         private QueueRow MakeRow(ResearchProjectDef project, int position, bool blocked, string status, bool warns) =>
-            new QueueRow(project, position, blocked, newIds.Contains(project.defName), status, warns, () => Tooltip(project));
+            new QueueRow(project, position, blocked, newIds.Contains(project.defName), status, warns,
+                () => Tooltip(project) + "\n\n" + (position > 0 ? "ResearchQueue_QueuedCardHint" : "ResearchQueue_CardHint").Translate().Colorize(ColoredText.SubtleGrayColor));
 
-        private bool Matches(ResearchProjectDef project) => !search.filter.Active || search.filter.Matches(ResearchCard.Label(project));
+        // As vanilla: the name or anything it unlocks; undiscovered projects never match.
+        private bool Matches(ResearchProjectDef project) =>
+            !search.filter.Active || (!project.IsHidden && (search.filter.Matches(ResearchCatalog.Label(project)) || project.UnlockedDefs.Any(MatchesUnlock)));
+
+        private bool MatchesUnlock(Def unlock) => search.filter.Active && search.filter.Matches(unlock.label);
 
         private static float Remaining(ResearchProjectDef project) => Mathf.Max(0f, project.CostApparent - project.ProgressApparent);
 
@@ -282,7 +327,8 @@ namespace ResearchQueue.UI
 
         private string Tooltip(ResearchProjectDef project)
         {
-            string text = ResearchCard.Label(project);
+            if (project.IsHidden) return ResearchCatalog.ProjectLabel(project);
+            string text = ResearchCatalog.Label(project);
             if (!project.description.NullOrEmpty()) text += "\n\n" + project.description;
             ResearchQueueWorldComponent? tracker = ResearchQueueWorldComponent.Get();
             string? reason = tracker == null ? null : Reason(project, tracker);
@@ -298,7 +344,7 @@ namespace ResearchQueue.UI
             if (tracker.IsExcluded(project))
             {
                 if (tracker.IsSnoozed(project)) return "ResearchQueue_ExplicitSnooze".Translate();
-                List<string> roots = tracker.SnoozedPrerequisites(project).ConvertAll(ResearchCard.Label);
+                List<string> roots = tracker.SnoozedPrerequisites(project).ConvertAll(ResearchCatalog.Label);
                 return "ResearchQueue_SnoozedPrerequisite".Translate(string.Join(", ", roots));
             }
             return ResearchRequirements.CanStart(project) || Find.ResearchManager.IsCurrentProject(project) ? null : ResearchRequirements.BlockReason(project);
@@ -307,8 +353,8 @@ namespace ResearchQueue.UI
         // Current research sits in its own section, divided from the queue below; returns where the queue starts.
         private float DrawCurrent(Rect left, ResearchQueueWorldComponent tracker)
         {
-            Heading(new Rect(left.x, left.y, left.width, HeaderHeight), "ResearchQueue_Current".Translate());
-            Rect row = new Rect(left.x, left.y + HeaderHeight + 4f, left.width - 16f, ResearchCard.Height);
+            ColumnTitle(left, "ResearchQueue_Current".Translate());
+            Rect row = new Rect(left.x, left.y + ColumnContentTop, left.width - ResearchCard.ScrollReserve, ResearchCard.Height);
             if (currentRow != null) DrawRow(row, currentRow, tracker);
             else
             {
@@ -321,7 +367,8 @@ namespace ResearchQueue.UI
             float divider = row.yMax + 14f;
             Widgets.DrawLineHorizontal(left.x, divider, left.width, DividerColor);
             float y = divider + 10f;
-            string header = showingSnoozed ? "ResearchQueue_SnoozedHeader".Translate(snoozedCount) : "ResearchQueue_QueueHeader".Translate(queuedCount);
+            string header = showingSnoozed ? "ResearchQueue_SnoozedHeader".Translate(snoozedCount)
+                : queueTotal != null ? "ResearchQueue_QueueHeaderTotal".Translate(queuedCount, queueTotal) : "ResearchQueue_QueueHeader".Translate(queuedCount);
             Heading(new Rect(left.x, y, left.width, HeaderHeight), header);
             return y + HeaderHeight + 4f;
         }
@@ -333,11 +380,23 @@ namespace ResearchQueue.UI
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
+        // Shared title at the top of each column; each column's content starts ColumnContentTop below it.
+        private static void ColumnTitle(Rect column, string text)
+        {
+            Text.Font = GameFont.Medium;
+            Text.WordWrap = false;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(new Rect(column.x, column.y, column.width, ColumnTitleHeight), text.Truncate(column.width));
+            Text.Anchor = TextAnchor.UpperLeft;
+            Text.WordWrap = true;
+            Text.Font = GameFont.Small;
+        }
+
         private void DrawQueue(Rect rect, ResearchQueueWorldComponent tracker)
         {
             Dictionary<ResearchSystem, Vector2> scrollSet = scrolls[showingSnoozed ? 1 : 0];
             Vector2 scroll = scrollSet.TryGetValue(System, out Vector2 saved) ? saved : Vector2.zero;
-            Rect view = new Rect(0f, 0f, rect.width - 16f, Mathf.Max(rect.height, rows.Count * RowHeight));
+            Rect view = new Rect(0f, 0f, rect.width - ResearchCard.ScrollReserve, Mathf.Max(rect.height, rows.Count * RowHeight));
             if (scrollToSelection)
             {
                 scrollToSelection = false;
@@ -407,7 +466,7 @@ namespace ResearchQueue.UI
             if (row.Position > 0 && reorderGroup >= 0 && Event.current.type != EventType.Repaint) ReorderableWidget.Reorderable(reorderGroup, card);
             ResearchCard.Draw(card, row, row.Project == selectedProject);
 
-            if (Event.current.type != EventType.MouseDown || !Mouse.IsOver(card)) return;
+            if (row.Hidden || Event.current.type != EventType.MouseDown || !Mouse.IsOver(card)) return;
             if (Event.current.button == 0) SelectProject(row.Project);
             else if (Event.current.button == 1) OpenMenu(row, tracker);
             Event.current.Use();
@@ -423,7 +482,7 @@ namespace ResearchQueue.UI
             {
                 options.Add(new FloatMenuOption("ResearchQueue_Snooze".Translate(), () => ConfirmSnooze(project, tracker)));
                 if (row.Position > 0)
-                    options.Add(new FloatMenuOption("ResearchQueue_Next".Translate(), row.Position > 1 && !row.Blocked ? () => tracker.MoveToFront(project) : (Action?)null));
+                    options.Add(new FloatMenuOption("ResearchQueue_MoveToTop".Translate(), row.Position > 1 && !row.Blocked ? () => tracker.MoveToFront(project) : (Action?)null));
             }
             Find.WindowStack.Add(new FloatMenu(options));
         }
