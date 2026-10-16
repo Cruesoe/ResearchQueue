@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Drawing
 [IO.Directory]::CreateDirectory($OutputDirectory) | Out-Null
 
 # Draw on a 24-unit grid at high resolution, then downsample to transparent UI textures.
-foreach ($name in 'MoveToTop', 'Snooze') {
+foreach ($name in 'MoveToTop', 'Snooze', 'VanillaTree', 'ResearchQueue') {
     $canvas = [Drawing.Bitmap]::new(768, 768)
     $graphics = [Drawing.Graphics]::FromImage($canvas)
     $graphics.Clear([Drawing.Color]::Transparent)
@@ -28,6 +28,23 @@ foreach ($name in 'MoveToTop', 'Snooze') {
                 [Drawing.PointF]::new(6, 16.5),
                 [Drawing.PointF]::new(4, 14.5)))
             $graphics.FillPath([Drawing.Brushes]::White, $path)
+        } elseif ($name -eq 'VanillaTree') {
+            # A research tree: one node above a bar branching to three, for switching to the vanilla tree.
+            $white = [Drawing.Brushes]::White
+            $graphics.FillRectangle($white, 9, 2, 6, 5)
+            $graphics.FillRectangle($white, 11, 7, 2, 4)
+            $graphics.FillRectangle($white, 3.5, 11, 17, 2)
+            foreach ($x in 3.5, 11, 18.5) { $graphics.FillRectangle($white, $x, 13, 2, 3) }
+            foreach ($x in 1.5, 9, 16.5) { $graphics.FillRectangle($white, $x, 16, 6, 5) }
+        } elseif ($name -eq 'ResearchQueue') {
+            # A queue: three bulleted rows, for returning to Research Queue.
+            $white = [Drawing.Brushes]::White
+            $graphics.FillRectangle($white, 2, 3, 4, 4)
+            $graphics.FillRectangle($white, 8, 3, 14, 4)
+            $graphics.FillRectangle($white, 2, 10, 4, 4)
+            $graphics.FillRectangle($white, 8, 10, 14, 4)
+            $graphics.FillRectangle($white, 2, 17, 4, 4)
+            $graphics.FillRectangle($white, 8, 17, 14, 4)
         } else {
             # Explicit letter outlines avoid the spikes made by mitered diagonal strokes.
             foreach ($letter in @(@(2, 13, 7, 8), @(10.5, 8.5, 6, 7), @(18, 4, 5, 6))) {

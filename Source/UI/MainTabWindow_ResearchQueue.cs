@@ -213,12 +213,20 @@ namespace ResearchQueue.UI
             if (Widgets.ButtonText(toggle, label)) SetSnoozedView(!showingSnoozed);
             TooltipHandler.TipRegion(toggle, (showingSnoozed ? "ResearchQueue_ShowQueueTip" : "ResearchQueue_ShowSnoozedTip").Translate());
 
-            Rect cog = new Rect(rect.xMax - 28f, rect.y + 1f, 28f, 28f);
-            if (Widgets.ButtonImage(cog, SettingsIcon, Color.white, GenUI.MouseoverColor, true, "ResearchQueue_SettingsTip".Translate()))
+            // Right to left: settings, the vanilla tree, then Node Research when it is loaded.
+            Rect button = new Rect(rect.xMax - 28f, rect.y + 1f, 28f, 28f);
+            if (Widgets.ButtonImage(button, SettingsIcon, Color.white, GenUI.MouseoverColor, true, "ResearchQueue_SettingsTip".Translate()))
             {
                 SoundDefOf.Click.PlayOneShotOnCamera();
                 Find.WindowStack.Add(new Dialog_ModSettings(ResearchQueueMod.Instance));
             }
+            button.x -= 36f;
+            if (Widgets.ButtonImage(button, ResearchScreens.VanillaIcon, Color.white, GenUI.MouseoverColor, true, "ResearchQueue_OpenVanillaTip".Translate()))
+                ResearchScreens.OpenVanilla(this);
+            if (ResearchScreens.NodeIcon == null) return;
+            button.x -= 36f;
+            if (Widgets.ButtonImage(button, ResearchScreens.NodeIcon, Color.white, GenUI.MouseoverColor, true, "ResearchQueue_OpenNodeTip".Translate()))
+                ResearchScreens.OpenNode(this);
         }
 
         private void SetSnoozedView(bool snoozed)

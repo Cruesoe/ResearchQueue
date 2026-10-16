@@ -7,6 +7,9 @@
   <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion as an in-game date instead of the number of days remaining.</ResearchQueue_ShowCompletionDateTip>
   <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
   <ResearchQueue_SettingsTip>Research Queue settings</ResearchQueue_SettingsTip>
+  <ResearchQueue_OpenVanillaTip>Browse the vanilla research tree. Research Queue still chooses what to research; the Research button brings you back here.</ResearchQueue_OpenVanillaTip>
+  <ResearchQueue_OpenNodeTip>Browse Node Research's tree. Research Queue still chooses what to research; the Research button brings you back here.</ResearchQueue_OpenNodeTip>
+  <ResearchQueue_OpenQueueTip>Back to Research Queue.</ResearchQueue_OpenQueueTip>
   <ResearchQueue_Standard>Standard</ResearchQueue_Standard>
   <ResearchQueue_Gravtech>Gravtech</ResearchQueue_Gravtech>
   <ResearchQueue_AnomalyCategory>Anomaly: {0}</ResearchQueue_AnomalyCategory>

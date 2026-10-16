@@ -14,6 +14,7 @@ I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=372
 [*]Blocked projects keep their place in the queue and say what they are waiting for.
 [*]The details panel shows a project's description, what it unlocks and what it leads to, with the other prerequisites each of those still needs.
 [*]Search filters the queue and the snoozed list by name or by anything a project unlocks.
+[*]Buttons beside the settings switch to the vanilla research tree, or Node Research's tree when it is installed, for browsing, with a button there to come back; the queue keeps choosing research.
 [*]Standard research, each Anomaly knowledge category and Gravtech have separate queues, since each has its own research slot.
 [/list]
 
