@@ -17,6 +17,7 @@
   <ResearchQueue_Foundation>Foundation</ResearchQueue_Foundation>
   <ResearchQueue_Emergence>Emergence</ResearchQueue_Emergence>
   <ResearchQueue_Current>Current research</ResearchQueue_Current>
+  <ResearchQueue_DevFinish>Dev: Finish now</ResearchQueue_DevFinish>
   <ResearchQueue_Idle>No research in this system can start right now.</ResearchQueue_Idle>
   <ResearchQueue_Snoozed>Snoozed</ResearchQueue_Snoozed>
   <ResearchQueue_ShowSnoozed>Show snoozed ({0})</ResearchQueue_ShowSnoozed>

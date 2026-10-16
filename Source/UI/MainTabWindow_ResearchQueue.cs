@@ -365,6 +365,12 @@ namespace ResearchQueue.UI
         {
             ColumnTitle(left, "ResearchQueue_Current".Translate());
             Rect row = new Rect(left.x, left.y + ColumnContentTop, left.width - ResearchCard.ScrollReserve, ResearchCard.Height);
+            // Dev mode only, as vanilla's "Debug: Finish now": completes the current project; the queue then starts the next.
+            if (Prefs.DevMode && currentRow != null)
+            {
+                Rect finish = new Rect(row.xMax - 140f, left.y + (ColumnTitleHeight - 28f) / 2f, 140f, 28f);
+                if (Widgets.ButtonText(finish, "ResearchQueue_DevFinish".Translate())) Find.ResearchManager.FinishProject(currentRow.Project);
+            }
             if (currentRow != null) DrawRow(row, currentRow, tracker);
             else
             {
