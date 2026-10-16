@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
   <ResearchQueue_SettingsCategory>Research Queue</ResearchQueue_SettingsCategory>
-  <ResearchQueue_ConfirmDependentSnooze>Confirm snoozing when queued projects depend on it</ResearchQueue_ConfirmDependentSnooze>
-  <ResearchQueue_ConfirmDependentSnoozeTip>Before snoozing a project that other queued projects depend on, list those projects and ask for confirmation.</ResearchQueue_ConfirmDependentSnoozeTip>
+  <ResearchQueue_ConfirmDependentSnooze>Confirm snoozing when other projects depend on it</ResearchQueue_ConfirmDependentSnooze>
+  <ResearchQueue_ConfirmDependentSnoozeTip>Before snoozing a project that other research depends on, list the projects it would block and ask for confirmation.</ResearchQueue_ConfirmDependentSnoozeTip>
   <ResearchQueue_ShowCompletionDate>Show completion dates instead of days</ResearchQueue_ShowCompletionDate>
   <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion as an in-game date instead of the number of days remaining.</ResearchQueue_ShowCompletionDateTip>
   <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
@@ -32,7 +32,8 @@
   <ResearchQueue_Restore>Restore</ResearchQueue_Restore>
   <ResearchQueue_Next>Research next</ResearchQueue_Next>
   <ResearchQueue_AlreadyNext>Already next in the queue.</ResearchQueue_AlreadyNext>
-  <ResearchQueue_ConfirmSnooze>Snooze {0}? These queued projects depend on it and will be removed from their queues too:</ResearchQueue_ConfirmSnooze>
+  <ResearchQueue_ConfirmSnoozeTitle>Snooze {0}?</ResearchQueue_ConfirmSnoozeTitle>
+  <ResearchQueue_ConfirmSnooze>These projects depend on it and will also be blocked until you restore it:</ResearchQueue_ConfirmSnooze>
   <ResearchQueue_Cost>Research points: {0}</ResearchQueue_Cost>
   <ResearchQueue_UnlockEstimate>Estimated completion: {0}</ResearchQueue_UnlockEstimate>
   <ResearchQueue_Unlocks>Unlocks</ResearchQueue_Unlocks>

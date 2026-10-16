@@ -1,0 +1,27 @@
+[b]Research never stops: every project you can start is queued automatically, and the next one starts the moment the last one finishes.[/b]
+
+Research becomes opt-out instead of opt-in: rather than picking each project you want, you snooze the ones you don't. The Research tab becomes the queue, and your researchers keep working whether or not you open it.
+
+I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3729878405]Node Research[/url] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3521297585]The Progression Modpack[/url] in mind. Feedback is welcome.
+
+[h2]Features[/h2]
+[list]
+[*]Every project you can start joins the queue automatically, cheapest era first, and new research is added as soon as it becomes available.
+[*]Drag cards to change priorities, or use Research next to send a project straight to the front.
+[*]Snooze projects you don't want this playthrough; anything that depends on them is set aside too until you restore them.
+[*]Before a snooze, a confirmation lists every project it would block.
+[*]Each card shows its cost and an estimated completion, measured from your colony's actual research speed.
+[*]Blocked projects keep their place in the queue and say what they are waiting for.
+[*]The details panel shows a project's description, what it unlocks and what it leads to, with the other prerequisites each of those still needs.
+[*]Search filters the queue and the snoozed list by name.
+[*]Standard research, each Anomaly knowledge category and Gravtech have separate queues, since each has its own research slot.
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3729878405]Node Research[/url]: compatible. Its era, foundation and emergence rules are followed, foundation and emergence projects are tagged on their cards, and its research queue is taken over when you add this mod.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3609835606]Vanilla Gravship Expanded - Chapter 1[/url]: compatible. Gravtech research gets its own queue.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3778002533]Semi Random Research:P-Fork Continued[/url]: not compatible, because it also chooses what to research.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3715276023]Research: Auto[/url]: not compatible, because it also chooses what to research.
+[*]Safe to add to an existing save.
+[/list]

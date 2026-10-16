@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ResearchQueue.Research;
 using RimWorld;
 using UnityEngine;
@@ -97,6 +98,43 @@ namespace ResearchQueue.UI
             TooltipHandler.TipRegion(rect, new TipSignal(row.Tooltip, row.Project.shortHash));
             Text.Anchor = oldAnchor;
             Text.WordWrap = oldWrap;
+            GUI.color = oldColor;
+        }
+
+        // Era, then cost: the queue's order, for lists of related projects.
+        public static int ByEra(ResearchProjectDef a, ResearchProjectDef b) =>
+            a.techLevel != b.techLevel ? a.techLevel.CompareTo(b.techLevel) : a.CostApparent.CompareTo(b.CostApparent);
+
+        // Space above card i of an era-sorted list: wider where a new era starts.
+        public static float GapBefore(IReadOnlyList<ResearchProjectDef> projects, int i) =>
+            projects[i].techLevel != projects[i - 1].techLevel ? 14f : 4f;
+
+        // Icon and name with its tag below, for lists of related projects.
+        public static void DrawCompact(Rect rect, ResearchProjectDef project, bool highlight)
+        {
+            Color oldColor = GUI.color;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color color = ColorFor(project);
+            if (Event.current.type == EventType.Repaint)
+            {
+                Background(rect, color, highlight && Mouse.IsOver(rect));
+                GUI.color = color;
+                Widgets.DrawBox(rect);
+                GUI.color = Color.white;
+                if (project.UnlockedDefs.Count > 0) Widgets.DefIcon(new Rect(rect.x + 6f, rect.center.y - 16f, 32f, 32f), project.UnlockedDefs[0]);
+            }
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = TextColor;
+            Rect label = new Rect(rect.x + 46f, rect.y, rect.width - 50f, rect.height);
+            string tag = ResearchCatalog.Tag(project);
+            if (tag.Length > 0)
+            {
+                Widgets.Label(new Rect(label.x, label.y + 2f, label.width, 22f), Label(project));
+                GUI.color = TagColor;
+                Widgets.Label(new Rect(label.x, label.y + 24f, label.width, 22f), tag);
+            }
+            else Widgets.Label(label, Label(project));
+            Text.Anchor = oldAnchor;
             GUI.color = oldColor;
         }
 

@@ -207,19 +207,15 @@ namespace ResearchQueue.State
             Revision++;
         }
 
-        // Queued or current projects that snoozing this one would also remove.
-        public List<ResearchProjectDef> QueuedDependents(ResearchProjectDef project)
+        // Unfinished projects, queued or not, that snoozing this one would also exclude; by era, then cost, like the queue.
+        public List<ResearchProjectDef> BlockedDependents(ResearchProjectDef project)
         {
             HashSet<ResearchProjectDef> affected = new HashSet<ResearchProjectDef>();
             QueueRules.AddWithDependents(affected, project, ResearchCatalog.Dependents);
             List<ResearchProjectDef> result = new List<ResearchProjectDef>();
             foreach (ResearchProjectDef dependent in affected)
-            {
-                if (dependent == project || dependent.IsFinished) continue;
-                ResearchSystemQueueState? state = StateOf(dependent);
-                if (state != null && (state.Queue.Contains(dependent.defName) || state.System!.CurrentProject() == dependent))
-                    result.Add(dependent);
-            }
+                if (dependent != project && !dependent.IsFinished && !excluded.Contains(dependent)) result.Add(dependent);
+            result.Sort(UI.ResearchCard.ByEra);
             return result;
         }
 

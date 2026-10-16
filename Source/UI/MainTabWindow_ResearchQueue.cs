@@ -19,7 +19,6 @@ namespace ResearchQueue.UI
         private const float NumberWidth = 44f;
         private const float HeaderHeight = 26f;
         private const float RefreshTicks = 250;
-
         private static readonly Texture2D SettingsIcon = ContentFinder<Texture2D>.Get("UI/ResearchQueue/Settings");
         private static readonly Color DividerColor = new Color(1f, 1f, 1f, 0.2f);
         private static readonly Color DropLineColor = new Color(1f, 0.8f, 0.2f);
@@ -56,8 +55,7 @@ namespace ResearchQueue.UI
         private ResearchSystem System => system ??= ResearchCatalog.Standard;
 
         protected override float Margin => 12f;
-        public override Vector2 RequestedTabSize => new Vector2(Verse.UI.screenWidth, Verse.UI.screenHeight - 35f);
-        public override Vector2 InitialSize => RequestedTabSize;
+        public override Vector2 RequestedTabSize => new Vector2(1200f, Verse.UI.screenHeight - 35f);
 
         public override void PreOpen()
         {
@@ -96,7 +94,7 @@ namespace ResearchQueue.UI
             RebuildIfNeeded(tracker);
             DrawToolbar(new Rect(content.x, content.y, content.width, 30f));
 
-            float detailsWidth = Mathf.Clamp(content.width * 0.27f, 270f, 430f);
+            float detailsWidth = Mathf.Clamp(content.width * 0.33f, 270f, 400f);
             Rect left = new Rect(content.x, content.y + 42f, content.width - detailsWidth - 20f, content.height - 42f);
             Rect right = new Rect(left.xMax + 20f, left.y, detailsWidth, left.height);
             float y = DrawCurrent(left, tracker);
@@ -279,7 +277,7 @@ namespace ResearchQueue.UI
             Map? map = Find.CurrentMap ?? Find.AnyPlayerHomeMap;
             if (map == null) return "ResearchQueue_DaysEstimate".Translate(days.ToString("0.0"));
             long ticks = Find.TickManager.TicksAbs + (long)(days * GenDate.TicksPerDay);
-            return "ResearchQueue_DateEstimate".Translate(GenDate.DateFullStringAt(ticks, Find.WorldGrid.LongLatOf(map.Tile)));
+            return "ResearchQueue_DateEstimate".Translate(GenDate.DateShortStringAt(ticks, Find.WorldGrid.LongLatOf(map.Tile)));
         }
 
         private string Tooltip(ResearchProjectDef project)
@@ -432,15 +430,13 @@ namespace ResearchQueue.UI
 
         private static void ConfirmSnooze(ResearchProjectDef project, ResearchQueueWorldComponent tracker)
         {
-            List<ResearchProjectDef> dependents = tracker.QueuedDependents(project);
+            List<ResearchProjectDef> dependents = tracker.BlockedDependents(project);
             if (dependents.Count == 0 || !ResearchQueueMod.Settings.ConfirmDependentSnooze)
             {
                 tracker.Snooze(project);
                 return;
             }
-            string message = "ResearchQueue_ConfirmSnooze".Translate(ResearchCard.Label(project)) + "\n\n" +
-                string.Join("\n", dependents.ConvertAll(p => "  - " + ResearchCard.Label(p)));
-            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(message, () => tracker.Snooze(project)));
+            Find.WindowStack.Add(new Dialog_ConfirmSnooze(project, dependents, () => tracker.Snooze(project)));
         }
     }
 }

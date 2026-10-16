@@ -12,7 +12,6 @@ namespace ResearchQueue.UI
     // The selected project's panel: title and actions stay fixed above a scrolling description, requirements and unlocks.
     public sealed partial class MainTabWindow_ResearchQueue
     {
-        private const float RelatedHeight = 36f;
 
         private readonly List<ResearchProjectDef> detailsLeadsTo = new List<ResearchProjectDef>();
         private Vector2 detailsScroll;
@@ -37,6 +36,7 @@ namespace ResearchQueue.UI
                 detailsLeadsTo.Clear();
                 foreach (ResearchProjectDef dependent in ResearchCatalog.Dependents(project))
                     if (!dependent.IsFinished) detailsLeadsTo.Add(dependent);
+                detailsLeadsTo.Sort(ResearchCard.ByEra);
             }
 
             Text.Font = GameFont.Medium;
@@ -114,32 +114,21 @@ namespace ResearchQueue.UI
         {
             if (detailsLeadsTo.Count == 0) return y;
             y = Heading(width, y, "ResearchQueue_LeadsTo".Translate());
-            foreach (ResearchProjectDef project in detailsLeadsTo)
+            for (int i = 0; i < detailsLeadsTo.Count; i++)
             {
-                Rect row = new Rect(0f, y, width, RelatedHeight);
-                Color color = ResearchCard.ColorFor(project);
-                if (Event.current.type == EventType.Repaint)
-                {
-                    ResearchCard.Background(row, color, Mouse.IsOver(row));
-                    GUI.color = color;
-                    Widgets.DrawBox(row);
-                    GUI.color = Color.white;
-                    if (project.UnlockedDefs.Count > 0) Widgets.DefIcon(new Rect(row.x + 5f, row.y + 5f, 26f, 26f), project.UnlockedDefs[0]);
-                }
-                Text.Anchor = TextAnchor.MiddleLeft;
-                GUI.color = ResearchCard.TextColor;
-                Widgets.Label(new Rect(row.x + 38f, row.y, row.width - 42f, row.height), ResearchCard.Label(project));
-                GUI.color = Color.white;
-                Text.Anchor = TextAnchor.UpperLeft;
+                ResearchProjectDef project = detailsLeadsTo[i];
+                if (i > 0) y += ResearchCard.GapBefore(detailsLeadsTo, i);
+                Rect row = new Rect(0f, y, width, ResearchCard.Height);
+                ResearchCard.DrawCompact(row, project, true);
                 TooltipHandler.TipRegion(row, new TipSignal(() => OtherPrerequisites(project, selected), project.shortHash ^ 0x5a17));
                 if (Widgets.ButtonInvisible(row, false))
                 {
                     SoundDefOf.Click.PlayOneShotOnCamera();
                     selectedProject = project;
                 }
-                y += RelatedHeight + 4f;
+                y += row.height;
             }
-            return y + 8f;
+            return y + 12f;
         }
 
         private static string OtherPrerequisites(ResearchProjectDef dependent, ResearchProjectDef shown)
