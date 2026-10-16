@@ -7,7 +7,7 @@ Add-Type -AssemblyName System.Drawing
 [IO.Directory]::CreateDirectory($OutputDirectory) | Out-Null
 
 # Draw on a 24-unit grid at high resolution, then downsample to transparent UI textures.
-foreach ($name in 'MoveToTop', 'Snooze', 'VanillaTree', 'ResearchQueue') {
+foreach ($name in 'MoveToTop', 'Snooze', 'Restore', 'VanillaTree', 'ResearchQueue') {
     $canvas = [Drawing.Bitmap]::new(768, 768)
     $graphics = [Drawing.Graphics]::FromImage($canvas)
     $graphics.Clear([Drawing.Color]::Transparent)
@@ -27,6 +27,26 @@ foreach ($name in 'MoveToTop', 'Snooze', 'VanillaTree', 'ResearchQueue') {
                 [Drawing.PointF]::new(10.5, 12),
                 [Drawing.PointF]::new(6, 16.5),
                 [Drawing.PointF]::new(4, 14.5)))
+            $graphics.FillPath([Drawing.Brushes]::White, $path)
+        } elseif ($name -eq 'Restore') {
+            # An undo arrow: a thick ring segment with a solid head on its upper end, pointing along the curve.
+            $cx = 13.0; $cy = 12.5; $radius = 7.5; $thickness = 3.0
+            $start = 250.0; $sweep = 290.0
+            $outer = $radius + $thickness / 2; $inner = $radius - $thickness / 2
+            $path.AddArc($cx - $outer, $cy - $outer, $outer * 2, $outer * 2, $start, $sweep)
+            $path.AddArc($cx - $inner, $cy - $inner, $inner * 2, $inner * 2, $start + $sweep, -$sweep)
+            $path.CloseFigure()
+            # The head's base lies along the radius at the ring's end, so the ring's flat end meets it squarely.
+            $angle = $start * [Math]::PI / 180
+            $ux = [Math]::Cos($angle); $uy = [Math]::Sin($angle)
+            $dx = $uy; $dy = -$ux
+            $px = $cx + $radius * $ux; $py = $cy + $radius * $uy
+            $half = 4.0; $length = 5.0
+            $path.AddPolygon([Drawing.PointF[]]@(
+                [Drawing.PointF]::new($px + $half * $ux, $py + $half * $uy),
+                [Drawing.PointF]::new($px + $length * $dx, $py + $length * $dy),
+                [Drawing.PointF]::new($px - $half * $ux, $py - $half * $uy)))
+            $path.FillMode = [Drawing.Drawing2D.FillMode]::Winding
             $graphics.FillPath([Drawing.Brushes]::White, $path)
         } elseif ($name -eq 'VanillaTree') {
             # A research tree: one node above a bar branching to three, for switching to the vanilla tree.
