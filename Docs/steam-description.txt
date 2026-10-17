@@ -4,13 +4,16 @@ Research becomes opt-out instead of opt-in: rather than picking each project you
 
 I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3729878405]Node Research[/url] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3521297585]The Progression Modpack[/url] in mind. Feedback is welcome.
 
+[b]I use this mod to test research enhancements, so changes are likely.[/b]
+
 [h2]Features[/h2]
 [list]
 [*]Every project you can start joins the queue automatically, earliest era first and cheapest first within each era, and new research is added as soon as it becomes available.
 [*]Drag cards to change priorities, use Move to top to send a project straight to the front, or Research now to switch to it at once; the project it replaces keeps its progress and goes back to the top of the queue.
 [*]Snooze projects you don't want this playthrough; anything that depends on them is set aside too until you restore them.
 [*]Before a snooze, a confirmation lists every project it would block.
-[*]Each card shows its cost and an estimated completion, measured from your colony's actual research speed.
+[*]Each card shows its cost, how long it takes on its own and when it should finish, measured from your colony's actual research speed.
+[*]A timings panel shows your research speed, the time left on the current project, when the whole queue will be finished and how long all remaining research would take.
 [*]Blocked projects keep their place in the queue and say what they are waiting for.
 [*]The details panel shows a project's description, what it unlocks and what it leads to, with the other prerequisites each of those still needs.
 [*]Search filters the queue and the snoozed list by name or by anything a project unlocks.

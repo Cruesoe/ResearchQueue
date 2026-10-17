@@ -10,9 +10,11 @@
   </supportedVersions>
   <description>Research never stops. Every project you can start is queued automatically, earliest era first and cheapest first within each era, and the next one starts the moment the last finishes, whether or not you open the Research tab.
 
-The Research tab becomes the queue: drag cards to change priorities, send a project to the front with Move to top or switch to it at once with Research now, and snooze projects you don't want this playthrough (anything that depends on them is left out too, until you restore them). Each card shows when it should finish, in days or as a date. Blocked projects keep their place and say why.
+The Research tab becomes the queue: drag cards to change priorities, send a project to the front with Move to top or switch to it at once with Research now, and snooze projects you don't want this playthrough (anything that depends on them is left out too, until you restore them). Each card shows how long it takes and when it should finish, and a timings panel shows when the whole queue, and all remaining research, will be done. Blocked projects keep their place and say why.
 
-Standard research, each Anomaly knowledge category and Vanilla Gravship Expanded's Gravtech have separate queues, since each has its own research slot. Works with Node Research's era, foundation and emergence rules.</description>
+Standard research, each Anomaly knowledge category and Vanilla Gravship Expanded's Gravtech have separate queues, since each has its own research slot. Works with Node Research's era, foundation and emergence rules.
+
+I use this mod to test research enhancements, so changes are likely.</description>
   <modDependencies>
     <li>
       <packageId>brrainz.harmony</packageId>

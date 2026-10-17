@@ -20,11 +20,13 @@ namespace ResearchQueue.UI
         public string Label { get; }
         public string Tag { get; }
         public string Cost { get; }
+        // The project's own remaining time, shown under the cost; null without a measured rate.
+        public string? Duration { get; }
         public float CostWidth { get; }
         public Color Color { get; }
         public Func<string> Tooltip { get; }
 
-        public QueueRow(ResearchProjectDef project, int position, bool blocked, bool isNew, string status, bool statusWarns, Func<string> tooltip)
+        public QueueRow(ResearchProjectDef project, int position, bool blocked, bool isNew, string status, bool statusWarns, string? duration, Func<string> tooltip)
         {
             Project = project;
             Position = position;
@@ -37,7 +39,8 @@ namespace ResearchQueue.UI
             Label = ResearchCatalog.ProjectLabel(project);
             Tag = Hidden ? string.Empty : ResearchCatalog.Tag(project);
             Cost = ResearchCard.Cost(project);
-            CostWidth = Mathf.Max(65f, Text.CalcSize(Cost).x + 12f);
+            Duration = duration;
+            CostWidth = Mathf.Max(65f, Text.CalcSize(Cost).x + 12f, duration == null ? 0f : Text.CalcSize(duration).x + 12f);
             Color = ResearchCard.CardColor(project);
         }
     }

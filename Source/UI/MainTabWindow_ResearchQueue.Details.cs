@@ -36,6 +36,7 @@ namespace ResearchQueue.UI
         private string detailsInfo = string.Empty;
         private float descriptionWidth = -1f;
         private float descriptionHeight;
+        private float infoHeight = 24f;
         private readonly List<DetailsAction> detailsActions = new List<DetailsAction>();
 
         // An icon action worked out once per refresh; Tip already holds the label, explanation and any disabled reason.
@@ -82,18 +83,20 @@ namespace ResearchQueue.UI
             float contentWidth = inner.width - ResearchCard.ScrollReserve;
             DrawActions(new Rect(inner.x + contentWidth - ActionsWidth, inner.y, ActionsWidth, ColumnTitleHeight));
             ColumnTitle(new Rect(inner.x, inner.y, contentWidth - ActionsWidth - 8f, ColumnTitleHeight), ResearchCatalog.Label(project));
-            Rect info = new Rect(inner.x, inner.y + ColumnTitleHeight, contentWidth, 24f);
+            if (descriptionWidth != contentWidth)
+            {
+                descriptionWidth = contentWidth;
+                descriptionHeight = DescriptionHeight(contentWidth, project);
+                infoHeight = Mathf.Max(24f, Text.CalcHeight(detailsInfo, contentWidth));
+            }
+            // The info line wraps when the panel is narrow.
+            Rect info = new Rect(inner.x, inner.y + ColumnTitleHeight, contentWidth, infoHeight);
             Widgets.Label(info, detailsInfo);
             if (unestimated.Contains(project) && !tracker.IsExcluded(project))
                 TooltipHandler.TipRegion(info, "ResearchQueue_NoEstimateTip".Translate());
 
             // Description and any block reason, up to a third of the panel; longer text scrolls.
             float y = info.yMax + 12f;
-            if (descriptionWidth != contentWidth)
-            {
-                descriptionWidth = contentWidth;
-                descriptionHeight = DescriptionHeight(contentWidth, project);
-            }
             Rect textOut = new Rect(inner.x, y, inner.width, Mathf.Min(descriptionHeight, inner.height / 3f));
             Widgets.BeginScrollView(textOut, ref descriptionScroll, new Rect(0f, 0f, contentWidth, descriptionHeight));
             try { DrawDescription(contentWidth, 0f, project); }
@@ -154,13 +157,16 @@ namespace ResearchQueue.UI
             return MakeRow(project, 0, blocked, status, blocked);
         }
 
-        // Gold tag, then cost and estimate in gray, separated by dots; a blocked or snoozed status is red.
-        private static string InfoLine(QueueRow row)
+        // Gold tag, then cost, own time and estimate in gray, separated by dots; a blocked or snoozed status is red.
+        private string InfoLine(QueueRow row)
         {
             List<string> parts = new List<string>();
             if (row.Tag.Length > 0) parts.Add(row.Tag.Colorize(ResearchCard.TagColor));
             parts.Add("ResearchQueue_InfoCost".Translate(row.Cost).Colorize(Color.gray));
-            parts.Add(row.Status.Colorize(row.StatusWarns ? ColorLibrary.RedReadable : Color.gray));
+            if (row.Duration != null) parts.Add("ResearchQueue_InfoTakes".Translate(row.Duration).Colorize(Color.gray));
+            bool estimate = estimates.TryGetValue(row.Project, out string? value) && value == row.Status;
+            string status = estimate ? "ResearchQueue_InfoDone".Translate(row.Status).ToString() : row.Status;
+            parts.Add(status.Colorize(row.StatusWarns ? ColorLibrary.RedReadable : Color.gray));
             return string.Join(" · ".Colorize(Color.gray), parts);
         }
 

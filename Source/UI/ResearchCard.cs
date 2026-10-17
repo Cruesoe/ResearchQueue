@@ -42,7 +42,7 @@ namespace ResearchQueue.UI
             ? project.ProgressApparent.ToString("N0") + "/" + project.CostApparent.ToString("N0")
             : project.CostApparent.ToString("N0");
 
-        // Columns: icon | name and tag | cost | estimate or state.
+        // Columns: icon | name and tag | cost and own time | estimate or state.
         public static void Draw(Rect rect, QueueRow row, bool selected)
         {
             Color oldColor = GUI.color;
@@ -86,7 +86,13 @@ namespace ResearchQueue.UI
 
             Text.Anchor = TextAnchor.MiddleCenter;
             GUI.color = row.Blocked ? Color.gray : Color.white;
-            Widgets.Label(new Rect(second, rect.y, row.CostWidth, rect.height), row.Cost);
+            if (row.Duration != null)
+            {
+                Widgets.Label(new Rect(second, rect.y + 2f, row.CostWidth, 22f), row.Cost);
+                GUI.color = Color.gray;
+                Widgets.Label(new Rect(second, rect.y + 24f, row.CostWidth, 22f), row.Duration);
+            }
+            else Widgets.Label(new Rect(second, rect.y, row.CostWidth, rect.height), row.Cost);
 
             Rect status = new Rect(third + 4f, rect.y, StatusWidth - 8f, rect.height);
             if (row.IsNew)

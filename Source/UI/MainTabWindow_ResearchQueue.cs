@@ -43,7 +43,6 @@ namespace ResearchQueue.UI
         private ResearchSystemQueueState? state;
         private QueueRow? currentRow;
         private int queuedCount;
-        private string? queueTotal;
         private int snoozedCount;
         private bool showingSnoozed;
         private bool rebuild = true;
@@ -112,6 +111,7 @@ namespace ResearchQueue.UI
             // The details panel starts at the line under Current research, level with the queue.
             float panelTop = top + ColumnContentTop + ResearchCard.Height + 14f;
             Rect details = new Rect(left.xMax + ColumnGap, panelTop, detailsWidth, left.yMax - panelTop);
+            DrawTimings(new Rect(details.x, top, details.width, ColumnContentTop + ResearchCard.Height));
             float y = DrawCurrent(left, tracker);
             DrawQueue(new Rect(left.x, y, left.width, left.yMax - y), tracker);
             DrawDetails(details, tracker, split);
@@ -255,6 +255,7 @@ namespace ResearchQueue.UI
             newIds.UnionWith(state!.NewIds);
 
             float rate = QueueRules.Average(state.Rates);
+            researchRate = rate;
             float work = 0f;
             currentRow = null;
             ResearchProjectDef? current = System.CurrentProject();
@@ -263,6 +264,7 @@ namespace ResearchQueue.UI
                 work = Remaining(current);
                 currentRow = MakeRow(current, 0, false, Record(current, Estimate(work, rate)) ?? noEstimate, false);
             }
+            float currentWork = work;
 
             snoozedCount = 0;
             string snoozedLabel = "ResearchQueue_Snoozed".Translate();
@@ -275,15 +277,15 @@ namespace ResearchQueue.UI
                     rows.Add(MakeRow(project, 0, false, tracker.IsSnoozed(project) ? snoozedLabel : prerequisiteLabel, false));
             }
 
-            // Filtered-out entries still count toward later estimates and positions.
+            // Filtered-out entries, and the whole queue in the snoozed view, still count toward estimates and positions.
             queuedCount = 0;
+            int blockedCount = 0;
             string blockedLabel = "ResearchQueue_Blocked".Translate();
             foreach (string id in state.Queue)
             {
                 ResearchProjectDef? project = DefDatabase<ResearchProjectDef>.GetNamedSilentFail(id);
                 if (project == null) continue;
                 queuedCount++;
-                if (showingSnoozed) continue;
                 bool blocked = !ResearchRequirements.CanStart(project);
                 string status = blockedLabel;
                 if (!blocked)
@@ -291,21 +293,20 @@ namespace ResearchQueue.UI
                     work += Remaining(project);
                     status = Record(project, Estimate(work, rate)) ?? noEstimate;
                 }
-                if (!Matches(project)) continue;
+                else blockedCount++;
+                if (showingSnoozed || !Matches(project)) continue;
                 rows.Add(MakeRow(project, queuedCount, blocked, status, blocked));
                 rowIds.Add(id);
             }
 
-            // Time to finish the current project and every startable queued one at the measured rate.
-            float totalDays = QueueRules.CompletionDays(work, rate);
-            queueTotal = totalDays > 0f && totalDays < 30000f ? ((int)(totalDays * GenDate.TicksPerDay)).ToStringTicksToPeriod(allowSeconds: false) : null;
+            BuildTimings(tracker, current, currentWork, work, blockedCount);
             search.noResultsMatched = search.filter.Active && rows.Count == 0;
         }
 
         private bool SettingsChanged() => builtShowDates != ResearchQueueMod.Settings.ShowCompletionDate;
 
         private QueueRow MakeRow(ResearchProjectDef project, int position, bool blocked, string status, bool warns) =>
-            new QueueRow(project, position, blocked, newIds.Contains(project.defName), status, warns,
+            new QueueRow(project, position, blocked, newIds.Contains(project.defName), status, warns, Duration(project),
                 () => Tooltip(project) + "\n\n" + (position > 0 ? "ResearchQueue_QueuedCardHint" : "ResearchQueue_CardHint").Translate().Colorize(ColoredText.SubtleGrayColor));
 
         // As vanilla: the name or anything it unlocks; undiscovered projects never match.
@@ -321,6 +322,14 @@ namespace ResearchQueue.UI
             if (estimate != null) estimates[project] = estimate;
             else unestimated.Add(project);
             return estimate;
+        }
+
+        // The project's own remaining time at the measured rate; null without a rate or once finished.
+        private string? Duration(ResearchProjectDef project)
+        {
+            float days = QueueRules.CompletionDays(Remaining(project), researchRate);
+            if (project.IsFinished || days < 0f || days > 100000f) return null;
+            return "ResearchQueue_Duration".Translate(days.ToString("0.0"));
         }
 
         // Null until a research rate has been measured.
@@ -385,8 +394,7 @@ namespace ResearchQueue.UI
             float divider = row.yMax + 14f;
             Widgets.DrawLineHorizontal(left.x, divider, left.width, DividerColor);
             float y = divider + 10f;
-            string header = showingSnoozed ? "ResearchQueue_SnoozedHeader".Translate(snoozedCount)
-                : queueTotal != null ? "ResearchQueue_QueueHeaderTotal".Translate(queuedCount, queueTotal) : "ResearchQueue_QueueHeader".Translate(queuedCount);
+            string header = showingSnoozed ? "ResearchQueue_SnoozedHeader".Translate(snoozedCount) : "ResearchQueue_QueueHeader".Translate(queuedCount);
             Heading(new Rect(left.x, y, left.width, HeaderHeight), header);
             return y + HeaderHeight + 4f;
         }

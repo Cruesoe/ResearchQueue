@@ -4,7 +4,7 @@
   <ResearchQueue_ConfirmDependentSnooze>Confirm snoozing when other projects depend on it</ResearchQueue_ConfirmDependentSnooze>
   <ResearchQueue_ConfirmDependentSnoozeTip>Before snoozing a project that other research depends on, list the projects it would block and ask for confirmation.</ResearchQueue_ConfirmDependentSnoozeTip>
   <ResearchQueue_ShowCompletionDate>Show completion dates instead of days</ResearchQueue_ShowCompletionDate>
-  <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion as an in-game date instead of the number of days remaining.</ResearchQueue_ShowCompletionDateTip>
+  <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion, and the queue and all-research timings, as in-game dates instead of the time remaining.</ResearchQueue_ShowCompletionDateTip>
   <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
   <ResearchQueue_SettingsTip>Research Queue settings</ResearchQueue_SettingsTip>
   <ResearchQueue_OpenVanillaTip>Browse the vanilla research tree. Research Queue still chooses what to research; the Research button brings you back here.</ResearchQueue_OpenVanillaTip>
@@ -23,14 +23,14 @@
   <ResearchQueue_ShowSnoozed>Show snoozed ({0})</ResearchQueue_ShowSnoozed>
   <ResearchQueue_ShowQueue>Back to queue ({0})</ResearchQueue_ShowQueue>
   <ResearchQueue_QueueHeader>Queue ({0})</ResearchQueue_QueueHeader>
-  <ResearchQueue_QueueHeaderTotal>Queue ({0}), ~{1} to finish</ResearchQueue_QueueHeaderTotal>
   <ResearchQueue_SnoozedHeader>Snoozed ({0})</ResearchQueue_SnoozedHeader>
   <ResearchQueue_PrerequisiteSnoozed>Prerequisite snoozed</ResearchQueue_PrerequisiteSnoozed>
   <ResearchQueue_NoQueued>No queued projects match. New research is added automatically as it becomes available.</ResearchQueue_NoQueued>
   <ResearchQueue_NoSnoozed>No snoozed projects match.</ResearchQueue_NoSnoozed>
   <ResearchQueue_New>New</ResearchQueue_New>
   <ResearchQueue_Blocked>Blocked</ResearchQueue_Blocked>
-  <ResearchQueue_DaysEstimate>~{0} days</ResearchQueue_DaysEstimate>
+  <ResearchQueue_DaysEstimate>in ~{0} days</ResearchQueue_DaysEstimate>
+  <ResearchQueue_Duration>~{0} days</ResearchQueue_Duration>
   <ResearchQueue_NoEstimate>No estimate yet</ResearchQueue_NoEstimate>
   <ResearchQueue_NoEstimateTip>Estimates appear once research progress has been measured. Research Queue measures it every hour and averages up to the last ten days.</ResearchQueue_NoEstimateTip>
   <ResearchQueue_DateEstimate>~{0}</ResearchQueue_DateEstimate>
@@ -50,6 +50,21 @@
   <ResearchQueue_QueuedCardHint>Drag to change its place in the queue. Right-click for more options.</ResearchQueue_QueuedCardHint>
   <ResearchQueue_CardHint>Right-click for more options.</ResearchQueue_CardHint>
   <ResearchQueue_InfoCost>{0} research points</ResearchQueue_InfoCost>
+  <ResearchQueue_InfoTakes>takes {0}</ResearchQueue_InfoTakes>
+  <ResearchQueue_InfoDone>done {0}</ResearchQueue_InfoDone>
+  <ResearchQueue_TimingRate>Research speed</ResearchQueue_TimingRate>
+  <ResearchQueue_TimingRateValue>{0} per day</ResearchQueue_TimingRateValue>
+  <ResearchQueue_TimingRateTip>Research points per day for this queue, measured every hour and averaged over up to the last ten days. Every estimate uses this speed.</ResearchQueue_TimingRateTip>
+  <ResearchQueue_TimingCurrent>Current project</ResearchQueue_TimingCurrent>
+  <ResearchQueue_TimingIdle>Idle</ResearchQueue_TimingIdle>
+  <ResearchQueue_TimingCurrentTip>Time left on {0}: {1} research points.</ResearchQueue_TimingCurrentTip>
+  <ResearchQueue_TimingCurrentIdleTip>No research in this queue is in progress.</ResearchQueue_TimingCurrentIdleTip>
+  <ResearchQueue_TimingQueue>Queue finished</ResearchQueue_TimingQueue>
+  <ResearchQueue_TimingQueueTip>Time to finish the current project and every queued project that can start now: {0} research points.</ResearchQueue_TimingQueueTip>
+  <ResearchQueue_TimingQueueBlocked>{0} blocked projects aren't counted until they can start.</ResearchQueue_TimingQueueBlocked>
+  <ResearchQueue_TimingTree>All research</ResearchQueue_TimingTree>
+  <ResearchQueue_TimingTreeTip>Time to finish all {0} remaining {1} projects, including those not yet available: {2} research points. Snoozed projects and those they block are left out, and eras or other requirements may hold some back for longer.</ResearchQueue_TimingTreeTip>
+  <ResearchQueue_TimingFinishes>Expected to finish around {0}.</ResearchQueue_TimingFinishes>
   <ResearchQueue_Unlocks>Unlocks</ResearchQueue_Unlocks>
   <ResearchQueue_UnlocksNone>This project doesn't unlock anything directly.</ResearchQueue_UnlocksNone>
   <ResearchQueue_LeadsTo>Leads to</ResearchQueue_LeadsTo>
