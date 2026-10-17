@@ -12,8 +12,6 @@ namespace ResearchQueue.UI
     public sealed partial class MainTabWindow_ResearchQueue
     {
         private const float TimingsWideWidth = 560f;
-        private static readonly Color HighlightFill = new Color(ResearchCard.TagColor.r, ResearchCard.TagColor.g, ResearchCard.TagColor.b, 0.12f);
-        private static readonly Color HighlightBorder = new Color(ResearchCard.TagColor.r, ResearchCard.TagColor.g, ResearchCard.TagColor.b, 0.6f);
 
         private readonly List<TimingStat> timings = new List<TimingStat>();
         private float researchRate;
@@ -25,15 +23,13 @@ namespace ResearchQueue.UI
             public readonly string Value;
             public readonly string Tip;
             public readonly bool Primary;
-            public readonly bool Highlight;
 
-            public TimingStat(string label, string value, string tip, bool primary, bool highlight)
+            public TimingStat(string label, string value, string tip, bool primary)
             {
                 Label = label;
                 Value = value;
                 Tip = label.Colorize(ColoredText.TipSectionTitleColor) + "\n\n" + tip;
                 Primary = primary;
-                Highlight = highlight;
             }
         }
 
@@ -46,18 +42,18 @@ namespace ResearchQueue.UI
 
             timings.Add(new TimingStat("ResearchQueue_TimingRate".Translate(),
                 measured ? "ResearchQueue_TimingRateValue".Translate(researchRate.ToString("N0")).ToString() : noEstimate,
-                measured ? "ResearchQueue_TimingRateTip".Translate() : noEstimateTip, false, false));
+                measured ? "ResearchQueue_TimingRateTip".Translate() : noEstimateTip, false));
 
             string currentTip = current == null ? "ResearchQueue_TimingCurrentIdleTip".Translate().ToString()
                 : "ResearchQueue_TimingCurrentTip".Translate(ResearchCatalog.ProjectLabel(current), currentWork.ToString("N0")) + DateLine(currentWork);
             timings.Add(new TimingStat("ResearchQueue_TimingCurrent".Translate(),
                 current == null ? "ResearchQueue_TimingIdle".Translate().ToString() : TimingValue(currentWork) ?? noEstimate,
-                measured || current == null ? currentTip : noEstimateTip, false, false));
+                measured || current == null ? currentTip : noEstimateTip, false));
 
             string queueTip = "ResearchQueue_TimingQueueTip".Translate(queueWork.ToString("N0")) + DateLine(queueWork);
             if (blockedCount > 0) queueTip += "\n\n" + "ResearchQueue_TimingQueueBlocked".Translate(blockedCount);
             timings.Add(new TimingStat("ResearchQueue_TimingQueue".Translate(), TimingValue(queueWork) ?? noEstimate,
-                measured ? queueTip : noEstimateTip, true, true));
+                measured ? queueTip : noEstimateTip, true));
 
             // Every unfinished project the difficulty allows, available or not, except snoozed ones and what they block.
             float treeWork = 0f;
@@ -70,7 +66,7 @@ namespace ResearchQueue.UI
             }
             string treeTip = "ResearchQueue_TimingTreeTip".Translate(treeCount, System.Label, treeWork.ToString("N0")) + DateLine(treeWork);
             timings.Add(new TimingStat("ResearchQueue_TimingTree".Translate(), TimingValue(treeWork) ?? noEstimate,
-                measured ? treeTip : noEstimateTip, true, false));
+                measured ? treeTip : noEstimateTip, true));
         }
 
         // Time left as a period, or as a date when the completion date setting is on; null without a rate.
@@ -97,42 +93,36 @@ namespace ResearchQueue.UI
             return GenDate.DateShortStringAt(ticks, Find.WorldGrid.LongLatOf(map.Tile));
         }
 
-        // Tiles side by side, each a gray label over its value; the queue's is gold on a gold-framed tile.
+        // Equal tiles split by dividers, each a gray label over its value, the pair centered in the tile.
         private void DrawTimings(Rect rect)
         {
             Widgets.DrawMenuSection(rect);
-            Rect inner = rect.ContractedBy(8f);
+            Rect inner = rect.ContractedBy(PanelPadding, 6f);
             bool wide = inner.width >= TimingsWideWidth;
             int count = 0;
             foreach (TimingStat stat in timings)
                 if (wide || stat.Primary) count++;
             if (count == 0) return;
-            float gap = 8f;
-            float width = (inner.width - gap * (count - 1)) / count;
+            float width = inner.width / count;
             float x = inner.x;
+            const float labelHeight = 22f, valueHeight = 32f;
+            float top = inner.center.y - (labelHeight + valueHeight) / 2f;
             Text.WordWrap = false;
             foreach (TimingStat stat in timings)
             {
                 if (!wide && !stat.Primary) continue;
                 Rect tile = new Rect(x, inner.y, width, inner.height);
-                x += width + gap;
-                if (stat.Highlight)
-                {
-                    Widgets.DrawBoxSolid(tile, HighlightFill);
-                    GUI.color = HighlightBorder;
-                    Widgets.DrawBox(tile);
-                }
+                if (x > inner.x) Widgets.DrawLine(new Vector2(x, inner.y + 6f), new Vector2(x, inner.yMax - 6f), DividerColor, 1f);
+                x += width;
                 Widgets.DrawHighlightIfMouseover(tile);
-                Rect text = tile.ContractedBy(8f, 4f);
-                Text.Anchor = TextAnchor.UpperLeft;
+                Rect text = tile.ContractedBy(12f, 0f);
+                Text.Anchor = TextAnchor.MiddleLeft;
                 GUI.color = Color.gray;
-                Widgets.Label(new Rect(text.x, text.y, text.width, 24f), stat.Label.Truncate(text.width));
+                Widgets.Label(new Rect(text.x, top, text.width, labelHeight), stat.Label.Truncate(text.width));
                 Text.Font = GameFont.Medium;
-                Text.Anchor = TextAnchor.LowerLeft;
-                GUI.color = stat.Highlight ? ResearchCard.TagColor : Color.white;
-                Widgets.Label(new Rect(text.x, text.y + 22f, text.width, text.height - 22f), stat.Value.Truncate(text.width));
-                Text.Font = GameFont.Small;
                 GUI.color = Color.white;
+                Widgets.Label(new Rect(text.x, top + labelHeight, text.width, valueHeight), stat.Value.Truncate(text.width));
+                Text.Font = GameFont.Small;
                 TooltipHandler.TipRegion(tile, stat.Tip);
             }
             Text.Anchor = TextAnchor.UpperLeft;

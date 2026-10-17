@@ -163,7 +163,7 @@ namespace ResearchQueue.UI
             List<string> parts = new List<string>();
             if (row.Tag.Length > 0) parts.Add(row.Tag.Colorize(ResearchCard.TagColor));
             parts.Add("ResearchQueue_InfoCost".Translate(row.Cost).Colorize(Color.gray));
-            if (row.Duration != null) parts.Add("ResearchQueue_InfoTakes".Translate(row.Duration).Colorize(Color.gray));
+            if (row.Duration != null) parts.Add("ResearchQueue_InfoTakes".Translate(row.Duration).ToString().Colorize(Color.gray));
             bool estimate = estimates.TryGetValue(row.Project, out string? value) && value == row.Status;
             string status = estimate ? "ResearchQueue_InfoDone".Translate(row.Status).ToString() : row.Status;
             parts.Add(status.Colorize(row.StatusWarns ? ColorLibrary.RedReadable : Color.gray));

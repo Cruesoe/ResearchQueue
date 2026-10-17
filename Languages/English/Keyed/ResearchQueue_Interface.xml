@@ -59,7 +59,7 @@
   <ResearchQueue_TimingIdle>Idle</ResearchQueue_TimingIdle>
   <ResearchQueue_TimingCurrentTip>Time left on {0}: {1} research points.</ResearchQueue_TimingCurrentTip>
   <ResearchQueue_TimingCurrentIdleTip>No research in this queue is in progress.</ResearchQueue_TimingCurrentIdleTip>
-  <ResearchQueue_TimingQueue>Queue finished</ResearchQueue_TimingQueue>
+  <ResearchQueue_TimingQueue>Whole queue</ResearchQueue_TimingQueue>
   <ResearchQueue_TimingQueueTip>Time to finish the current project and every queued project that can start now: {0} research points.</ResearchQueue_TimingQueueTip>
   <ResearchQueue_TimingQueueBlocked>{0} blocked projects aren't counted until they can start.</ResearchQueue_TimingQueueBlocked>
   <ResearchQueue_TimingTree>All research</ResearchQueue_TimingTree>
