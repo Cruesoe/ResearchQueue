@@ -19,6 +19,7 @@ I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=372
 [*]Search filters the queue and the snoozed list by name or by anything a project unlocks.
 [*]Buttons beside the settings switch to the vanilla research tree, or Node Research's tree when it is installed, for browsing, with a button there to come back; the queue keeps choosing research.
 [*]Standard research, each Anomaly knowledge category and Gravtech have separate queues, since each has its own research slot.
+[*]The research complete pop-up is replaced by a message, so fast research doesn't keep stopping the game. Turn the pop-up back on in the settings.
 [/list]
 
 [h2]Compatibility[/h2]

@@ -27,6 +27,8 @@ namespace ResearchQueue
                 "ResearchQueue_ConfirmDependentSnoozeTip".Translate());
             listing.CheckboxLabeled("ResearchQueue_ShowCompletionDate".Translate(), ref Settings.ShowCompletionDate,
                 "ResearchQueue_ShowCompletionDateTip".Translate());
+            listing.CheckboxLabeled("ResearchQueue_ShowCompletionPopup".Translate(), ref Settings.ShowCompletionPopup,
+                "ResearchQueue_ShowCompletionPopupTip".Translate());
             listing.End();
         }
     }
