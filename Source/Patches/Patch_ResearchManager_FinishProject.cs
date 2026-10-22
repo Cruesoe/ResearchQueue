@@ -18,7 +18,7 @@ namespace ResearchQueue.Patches
             __state = NodeResearch.SuppressAutoOpen();
             if (!doCompletionDialog || ResearchQueueMod.Settings.ShowCompletionPopup || proj == null) return;
             doCompletionDialog = false;
-            Messages.Message("ResearchQueue_ResearchFinished".Translate(proj.LabelCap), MessageTypeDefOf.PositiveEvent, historical: false);
+            Messages.Message("ResearchFinished".Translate(proj.LabelCap), MessageTypeDefOf.PositiveEvent);
         }
 
         [HarmonyPostfix]

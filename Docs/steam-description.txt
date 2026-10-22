@@ -26,6 +26,7 @@ I made this with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=372
 [list]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3729878405]Node Research[/url]: compatible. Its era, foundation and emergence rules are followed, foundation and emergence projects are tagged on their cards, its "Hide research from future tech levels" setting hides those projects here too, and its research queue is taken over when you add this mod. Its tree no longer opens after every finished project, since the queue starts the next one itself.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3609835606]Vanilla Gravship Expanded - Chapter 1[/url]: compatible. Gravtech research gets its own queue.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3219596926]Medieval Overhaul[/url]: compatible. Research that needs a schematic joins the queue once that schematic is on a bookshelf in the same room as a research bench.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3778002533]Semi Random Research:P-Fork Continued[/url]: not compatible, because it also chooses what to research.
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3715276023]Research: Auto[/url]: not compatible, because it also chooses what to research.
 [*]Safe to add to an existing save.
