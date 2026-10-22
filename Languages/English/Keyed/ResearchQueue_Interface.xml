@@ -7,7 +7,6 @@
   <ResearchQueue_ShowCompletionDateTip>Show each project's estimated completion, and the queue and all-research timings, as in-game dates instead of the time remaining.</ResearchQueue_ShowCompletionDateTip>
   <ResearchQueue_ShowCompletionPopup>Show a pop-up when research finishes</ResearchQueue_ShowCompletionPopup>
   <ResearchQueue_ShowCompletionPopupTip>Pause on the game's research complete window after each finished project. When off, a message at the top of the screen says what finished and the queue carries straight on.</ResearchQueue_ShowCompletionPopupTip>
-  <ResearchQueue_ResearchFinished>Research complete: {0}</ResearchQueue_ResearchFinished>
   <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
   <ResearchQueue_SettingsTip>Research Queue settings</ResearchQueue_SettingsTip>
   <ResearchQueue_OpenVanillaTip>Browse the vanilla research tree. Research Queue still chooses what to research; the Research button brings you back here.</ResearchQueue_OpenVanillaTip>
