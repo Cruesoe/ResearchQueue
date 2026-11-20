@@ -10,7 +10,7 @@
   <ResearchQueue_SelectionBlocked>Research Queue chooses research. Change priorities on the Research tab.</ResearchQueue_SelectionBlocked>
   <ResearchQueue_SettingsTip>Research Queue settings</ResearchQueue_SettingsTip>
   <ResearchQueue_OpenVanillaTip>Browse the vanilla research tree. Research Queue still chooses what to research; the Research button brings you back here.</ResearchQueue_OpenVanillaTip>
-  <ResearchQueue_OpenOrganized2Tip>Browse the research tree in Research: Organized 2. Research Queue still chooses what to research; the Research button, or the queue button in that window's title bar, brings you back here.</ResearchQueue_OpenOrganized2Tip>
+  <ResearchQueue_OpenOrganizedTip>Browse the research tree in Research: Organized's Rethemed window. Research Queue still chooses what to research; the Research button, or the queue button in that window's title bar, brings you back here.</ResearchQueue_OpenOrganizedTip>
   <ResearchQueue_OpenNodeTip>Browse Node Research's tree. Research Queue still chooses what to research; the Research button brings you back here.</ResearchQueue_OpenNodeTip>
   <ResearchQueue_OpenQueueTip>Back to Research Queue.</ResearchQueue_OpenQueueTip>
   <ResearchQueue_Standard>Standard</ResearchQueue_Standard>

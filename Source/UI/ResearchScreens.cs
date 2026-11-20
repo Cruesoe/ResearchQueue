@@ -29,18 +29,28 @@ namespace ResearchQueue.UI
         private static MainTabWindow_Research? vanillaWindow;
         private static MainTabWindow? nodeWindow;
 
-        // Research: Organized 2 replaces the vanilla tree with a window of its own, which this button opens instead.
-        private static readonly Type? Organized2WindowType =
-            ModsConfig.IsActive("cruesoe.research.organized2") ? AccessTools.TypeByName("ResearchOrganized2.MainTabWindow_Organized") : null;
+        // Research: Organized's Rethemed window replaces the vanilla tree while it is chosen in that mod's settings, so this button opens it instead.
+        private static readonly bool OrganizedActive = ModsConfig.IsActive("cruesoe.research.organized");
+        private static readonly Func<Type?>? OrganizedWindowType = OrganizedActive ? StaticDelegate<Func<Type?>>("ResearchOrganized.DisplayMode:get_ActiveWindowType") : null;
+        private static readonly Func<MainTabWindow_Research?>? CreateOrganizedWindow = OrganizedActive ? StaticDelegate<Func<MainTabWindow_Research?>>("ResearchOrganized.DisplayMode:CreateWindow") : null;
 
-        public static string VanillaTipKey => Organized2WindowType != null ? "ResearchQueue_OpenOrganized2Tip" : "ResearchQueue_OpenVanillaTip";
+        private static T? StaticDelegate<T>(string name) where T : Delegate
+        {
+            var method = AccessTools.Method(name);
+            if (method == null || !method.IsStatic) return null;
+            try { return (T)Delegate.CreateDelegate(typeof(T), method); }
+            catch (ArgumentException) { return null; }
+        }
+
+        public static string VanillaTipKey => OrganizedWindowType?.Invoke() != null ? "ResearchQueue_OpenOrganizedTip" : "ResearchQueue_OpenVanillaTip";
 
         public static void OpenVanilla(Window current)
         {
             current.Close(false);
             NodeRestoreTabs?.Invoke(null, null);
-            vanillaWindow ??= (Organized2WindowType != null ? Activator.CreateInstance(Organized2WindowType) as MainTabWindow_Research : null)
-                ?? new MainTabWindow_Research();
+            Type wanted = OrganizedWindowType?.Invoke() ?? typeof(MainTabWindow_Research);
+            if (vanillaWindow == null || vanillaWindow.GetType() != wanted)
+                vanillaWindow = (wanted != typeof(MainTabWindow_Research) ? CreateOrganizedWindow?.Invoke() : null) ?? new MainTabWindow_Research();
             vanillaWindow.def = MainButtonDefOf.Research;
             Show(vanillaWindow);
         }
