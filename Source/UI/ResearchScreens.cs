@@ -29,11 +29,19 @@ namespace ResearchQueue.UI
         private static MainTabWindow_Research? vanillaWindow;
         private static MainTabWindow? nodeWindow;
 
+        // Research: Organized 2 replaces the vanilla tree with a window of its own, which this button opens instead.
+        private static readonly Type? Organized2WindowType =
+            ModsConfig.IsActive("cruesoe.research.organized2") ? AccessTools.TypeByName("ResearchOrganized2.MainTabWindow_Organized") : null;
+
+        public static string VanillaTipKey => Organized2WindowType != null ? "ResearchQueue_OpenOrganized2Tip" : "ResearchQueue_OpenVanillaTip";
+
         public static void OpenVanilla(Window current)
         {
             current.Close(false);
             NodeRestoreTabs?.Invoke(null, null);
-            vanillaWindow ??= new MainTabWindow_Research { def = MainButtonDefOf.Research };
+            vanillaWindow ??= (Organized2WindowType != null ? Activator.CreateInstance(Organized2WindowType) as MainTabWindow_Research : null)
+                ?? new MainTabWindow_Research();
+            vanillaWindow.def = MainButtonDefOf.Research;
             Show(vanillaWindow);
         }
 

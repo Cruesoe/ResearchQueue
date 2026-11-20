@@ -221,7 +221,7 @@ namespace ResearchQueue.UI
                 Find.WindowStack.Add(new Dialog_ModSettings(ResearchQueueMod.Instance));
             }
             button.x -= 36f;
-            if (Widgets.ButtonImage(button, ResearchScreens.VanillaIcon, Color.white, GenUI.MouseoverColor, true, "ResearchQueue_OpenVanillaTip".Translate()))
+            if (Widgets.ButtonImage(button, ResearchScreens.VanillaIcon, Color.white, GenUI.MouseoverColor, true, ResearchScreens.VanillaTipKey.Translate()))
                 ResearchScreens.OpenVanilla(this);
             if (ResearchScreens.NodeIcon == null) return;
             button.x -= 36f;
